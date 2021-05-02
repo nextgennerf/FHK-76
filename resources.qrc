@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>blaster.png</file>
+        <file>rival.jpg</file>
+    </qresource>
+</RCC>
