@@ -9,7 +9,7 @@ from things.LEDbutton import LEDButton
 from things.motor import Motor
 from things.controlledMotor import ControlledMotor
 from things.indicator import Indicator
-from displayValue import DisplayValue
+from things.displayValue import DisplayValue
 
 class FHK76:
     '''
