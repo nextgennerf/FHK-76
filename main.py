@@ -29,10 +29,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.blaster = FHK76(self, [self.fpsLCD, self.psiLCD], useSimulator)
         self.blaster.changeMode(self.modeButtons.checkedId())
         
-        self.FPSupButton.clicked.connect(lambda: self.blaster.getFPS().changeTarget(5, True))
-        self.FPSdownButton.clicked.connect(lambda: self.blaster.getFPS().changeTarget(-5, True))
-        self.PSIupButton.clicked.connect(lambda: self.blaster.getPSI().changeTarget(5, True))
-        self.PSIdownButton.clicked.connect(lambda: self.blaster.getPSI().changeTarget(-5, True))
+        self.FPSupButton.clicked.connect(lambda: self.blaster.getFPS().changeTarget(5))
+        self.FPSdownButton.clicked.connect(lambda: self.blaster.getFPS().changeTarget(-5))
+        self.PSIupButton.clicked.connect(lambda: self.blaster.getPSI().changeTarget(5))
+        self.PSIdownButton.clicked.connect(lambda: self.blaster.getPSI().changeTarget(-5))
 
         self.lightButton.toggled.connect(lambda checked: self.blaster.toggleLight(checked))
         self.laserButton.toggled.connect(lambda checked: self.blaster.toggleLaser(checked))
@@ -57,6 +57,7 @@ if __name__ == '__main__':
         window.show()
         for i in window.getBlaster().getInputs().values():
             aio.create_task(i.loop())
+        aio.create_task(window.getBlaster().getUC().loop())
         if useSimulator:
             tSim = TerminalSimulator()
             window.getBlaster().connectSimulator(tSim)
