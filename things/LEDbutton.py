@@ -11,7 +11,7 @@ class LEDButton(Button, QObject):
     '''
     Button subclass with LED ring
     '''
-    updateGUI = pyqtSignal()
+    updateMode = pyqtSignal()
 
     def __init__(self, sim, buttons, modeID):
         '''
@@ -20,7 +20,7 @@ class LEDButton(Button, QObject):
         Button.__init__(self, sim)
         QObject.__init__(self)
         self.modeID = modeID
-        self.updateGUI.connect(buttons.button(modeID).click)
+        self.updateMode.connect(buttons.button(modeID).click)
         
 
     def connectSimulator(self, name, sim):
@@ -34,7 +34,7 @@ class LEDButton(Button, QObject):
             if not self.state:
                 print(self.name + " pressed")
                 self.state = True
-                self.updateGUI.emit()
+                self.updateMode.emit()
                 self.pressEvent.clear()
     
     def turnOn(self):

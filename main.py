@@ -26,13 +26,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.modeButtons.idClicked.connect(lambda modeID: self.blaster.changeMode(modeID))
         self.burstSlider.valueChanged.connect(lambda value: self.updateBurstValue(value))
         
-        self.blaster = FHK76(self, [self.fpsLCD, self.psiLCD, self.ammoLCD], useSimulator)
+        self.blaster = FHK76(self, [self.fpsLCD, self.psiLCD], useSimulator)
         self.blaster.changeMode(self.modeButtons.checkedId())
         
-        self.FPSupButton.clicked.connect(lambda: self.blaster.getFPS().change(5, True))
-        self.FPSdownButton.clicked.connect(lambda: self.blaster.getFPS().change(-5, True))
-        self.PSIupButton.clicked.connect(lambda: self.blaster.getPSI().change(5, True))
-        self.PSIdownButton.clicked.connect(lambda: self.blaster.getPSI().change(-5, True))
+        self.FPSupButton.clicked.connect(lambda: self.blaster.getFPS().changeTarget(5, True))
+        self.FPSdownButton.clicked.connect(lambda: self.blaster.getFPS().changeTarget(-5, True))
+        self.PSIupButton.clicked.connect(lambda: self.blaster.getPSI().changeTarget(5, True))
+        self.PSIdownButton.clicked.connect(lambda: self.blaster.getPSI().changeTarget(-5, True))
 
         self.lightButton.toggled.connect(lambda checked: self.blaster.toggleLight(checked))
         self.laserButton.toggled.connect(lambda checked: self.blaster.toggleLaser(checked))

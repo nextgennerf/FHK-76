@@ -9,23 +9,24 @@ from things.LEDbutton import LEDButton
 from things.motor import Motor
 from things.controlledMotor import ControlledMotor
 from things.indicator import Indicator
-from things.displayValue import DisplayValue
+from things.feedbackDisplay import FeedbackDisplay
+from things.metroMini import MetroMini
 
 class FHK76:
     '''
     Top-level class, represents the blaster as a whole
     '''
     
-    def __init__(self, gui, lcds, sim):
+    def __init__(self, gui, fbd, sim):
         '''
         Constructor needs a boolean to decide whether to create a real or fake blaster. The asyncio loop coordinates all input loops and triggers the
         appropriate outputs.
         '''
         settings = self.loadSettings()
         self.gui = gui
-        self.fps = DisplayValue(lcds[0], 0.0, settings["fpsTarget"])
-        self.psi = DisplayValue(lcds[1], 0.0, settings["psiTarget"])
-        self.ammo = DisplayValue(lcds[2], 0)
+        # self.uCon = MetroMini(sim, self.psi.get())
+        self.fps = FeedbackDisplay(fbd[0], 0.0, settings["fpsTarget"])
+        self.psi = FeedbackDisplay(fbd[1], 0.0, settings["psiTarget"], '''self.uCon''')
         
         mb = gui.getModeButtons()
         self.inputs = {"trigger":TouchTrigger(sim), "semi":LEDButton(sim, mb, 0), "burst":LEDButton(sim, mb, 1), "auto":LEDButton(sim, mb, 2),
@@ -99,7 +100,10 @@ class FHK76:
             self.inputs[self.mode].turnOff()
         self.mode = modes[modeID]
         self.inputs[self.mode].turnOn()
-        
+    
+    '''
+    Object request methods for the three LCDs
+    '''    
     def getFPS(self):
         return self.fps
     
