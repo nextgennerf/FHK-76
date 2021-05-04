@@ -27,7 +27,7 @@ class FHK76:
         self.fps = FeedbackDisplay(fbd[0], 0.0, settings["fps"])
         self.psi = FeedbackDisplay(fbd[1], 0.0, settings["psi"])
         path = settings["path"]
-        if self.path is None:
+        if path is None:
             self.uc = None
         else:
             self.uc = MetroMini(path, self.psi)
@@ -39,11 +39,11 @@ class FHK76:
         self.mode = None
         
         self.belt = Motor(sim)
-        self.flywheels = [ControlledMotor(sim), ControlledMotor(sim)]        
+        self.flywheels = [ControlledMotor(sim), ControlledMotor(sim)]
+        self.safetyLED = Indicator(sim, False, ["red", "green"])
+        self.laser = Indicator(sim)
+        self.light = Indicator(sim)     
         if sim:
-            self.safetyLED = Indicator(sim, False, ["red", "green"])
-            self.laser = Indicator(sim)
-            self.light = Indicator(sim)
             self.nameSimulatedIO()
             
     '''
@@ -55,7 +55,7 @@ class FHK76:
                 settings = json.load(file)
             file.close()
         else: # default settings
-            path = glob.glob("/dev/tty.usbserial-*")
+            path = glob.glob("/dev/cu.usbserial-*")
             if len(path) == 1:
                 path = path[0]
             else:

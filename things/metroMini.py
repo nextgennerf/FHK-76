@@ -3,7 +3,8 @@ Created on Apr 29, 2021
 
 @author: Jeffrey Blum
 '''
-import asyncio, serial
+import serial, serial_asyncio
+import asyncio as aio
 import concurrent.futures as cf
 from PyQt5.QtCore import QObject, pyqtSlot
 
@@ -19,27 +20,38 @@ class MetroMini(QObject):
         Constructor
         '''
         super().__init__()
-        self.mm = serial.Serial(port, 9600)  
+        self.mm = serial.Serial(port, 9600)
         self.display = lcd
         lcd.setTarget.connect(lambda new: self.setTarget(new))
-        self.mm.write(f"set {lcd.getTarget()}.")
+        self.write(f"set {lcd.getTarget()};")
     
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def setTarget(self, val):
-        self.mm.write(f"set {val}.")
+        self.write(f"set {val};")
+        
     
     def getPath(self):
         return self.mm.name
     
-    async def getReturn(self):
-        loop = asyncio.get_running_loop()
-        with cf.ThreadPoolExecutor() as pool:
-            data = await loop.run_in_executor(pool, self.mm.readline)
-        return data.rstrip("\r\n")
+    '''
+    This method can only be called by synchronous methods
+    '''
+    def write(self, msg):
+        self.mm.write(msg.encode())
+    
+    # async def dataReady(self):
+    #     while self.mm.in_waiting == 0:
+    #         await aio.sleep(1.0)
+    #     print("Data available")
+    #     return
     
     async def loop(self):
-        self.mm.write("request.")
-        newValue = await self.getReturn()
-        await self.display.update(float(newValue))
-        await asyncio.sleep(_UPDATE_INTERVAL)
+        loop = aio.get_running_loop()
+        with cf.ThreadPoolExecutor() as pool:
+            await loop.run_in_executor(pool, lambda: self.mm.write("request;".encode()))
+            print(f"Sending message: request;")
+            data = await loop.run_in_executor(pool, lambda: self.mm.readline().rstrip("\\r\\n"))
+        print(data)
+        await self.display.update(float(data))
+        await aio.sleep(_UPDATE_INTERVAL)
         

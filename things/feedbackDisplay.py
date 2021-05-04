@@ -19,14 +19,13 @@ class FeedbackDisplay(QObject):
         '''
         Constructor
         '''
+        super().__init__()
         self.lcd = lcd
+        self.value = initVal # The object needs to know the value mainly so changeTarget works properly
         lcd.display(float(initVal))
         self.target = float(targetVal)
         self.changing = False
-        self.timer = threading.Timer(_DELAY, self.reset)
-    
-    def getObject(self):
-        return self.lcd
+        self.timer = None
     
     def changeTarget(self, delta):
         self.changing = True
@@ -40,21 +39,23 @@ class FeedbackDisplay(QObject):
                                    "border-radius: 8px;\n"
                                    "color: #FF0000")
         self.lcd.display(self.target)
-        self.timer.cancel()
-        self.timer = threading.Timer(_DELAY, lambda: self.finalize(self.lcd.value()))
+        if self.timer is not None:
+            self.timer.cancel()
+        self.timer = threading.Timer(_DELAY, self.finalize)
         self.timer.start()
         
-    def finalize(self, value):
+    def finalize(self):
         self.lcd.setStyleSheet("border: 3px solid #61136e;\n"
                                "border-radius: 8px;\n"
                                "color: #000000")
         self.changing = False
         self.setTarget.emit(self.target)
-        self.lcd.display(value)
+        self.lcd.display(self.value)
     
     async def update(self, value):
         while self.changing:
             await asyncio.sleep(1)
+        self.value = value
         self.lcd.display(value)
     
     def getTarget(self):
