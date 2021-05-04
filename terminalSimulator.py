@@ -18,7 +18,6 @@ class TerminalSimulator:
         self.events = {}
     
     async def run(self):
-        print("FHK-76 Terminal Simulator launched")
         while True:
             loop = asyncio.get_running_loop()
             with cf.ThreadPoolExecutor() as pool:

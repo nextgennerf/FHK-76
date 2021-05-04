@@ -13,7 +13,7 @@ class FeedbackDisplay(QObject):
     '''
     This class wraps a QLCDNumber in the GUI that needs to keep track of a target value.
     '''
-    setTarget = pyqtSignal(int)
+    setTarget = pyqtSignal(float)
 
     def __init__(self, lcd, initVal, targetVal):
         '''
@@ -54,7 +54,7 @@ class FeedbackDisplay(QObject):
     
     async def update(self, value):
         while self.changing:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
         self.value = value
         self.lcd.display(value)
     
