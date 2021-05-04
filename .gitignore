@@ -9,7 +9,7 @@ local.properties
 .settings/
 .loadpath
 .recommenders
-.autosave
+*.autosave
 
 # External tool builders
 .externalToolBuilders/
