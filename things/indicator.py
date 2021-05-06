@@ -7,8 +7,8 @@ class Indicator(IOModule):
     
     SIGNALS            SLOTS
     -------    -------------
-    none       (int)  turnOn
-               (int) turnOff
+    none       (int) turnOff
+               (int)  turnOn
     """
 
     def __init__(self, sim, num, initState = 0, arg3 = ["off", "on"]):
@@ -29,7 +29,7 @@ class Indicator(IOModule):
             int - the ID of the indicator to be turned on
         
         Connects to:
-            none
+            FHK76.turnOn
         """
         if num == self.num:
             if self.simulated:
@@ -48,7 +48,7 @@ class Indicator(IOModule):
             int - the ID of the indicator to be turned on
         
         Connects to:
-            none
+            FHK76.turnOff
         """
         if self.num == num:
             if self.simulated:

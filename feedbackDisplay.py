@@ -3,27 +3,29 @@ from PyQt5.QtCore import QObject, pyqtSignal, QMutex
 
 _DELAY = 1.0 # Represents the time delay between the last GUI button press and the display returning to normal
 
+#TODO: add determination of how data should be output
+
 class FeedbackDisplay(QObject):
     """CLASS: FeedbackDisplay
     
     This class wraps a QLCDNumber in the GUI so it can keep track of a target value.
     
-    SIGNALS                  SLOTS
-    ---------------------    -----
-    setTarget     (float)     none
-    displayNumber (float)
+    SIGNALS                                 SLOTS
+    ---------------------    --------------------
+    displayNumer  (float)    (float) changeTarget
+    sendMessage     (str)    (float)       output
     """
     
-    setTarget = pyqtSignal(float)
-    """SIGNAL: setTarget
+    sendMessage = pyqtSignal(str)
+    """SIGNAL: sendMessage
     
-    Emitted when the user uses the GUI to change the target value
+    Emitted when the user uses the GUI to change the target value so the peripheral controller can be notified
     
     Broadcasts:
-        float - The new target value
+        str - A message to be delivered to the peripheral controller
     
     Connects to:
-        none
+        MetroMini.writeData
     """
     
     displayNumber = pyqtSignal(float)
@@ -48,24 +50,18 @@ class FeedbackDisplay(QObject):
         self.lock = QMutex()
         self.displayNumber.connect(lcd.display)
         self.displayNumber.emit(self.value)
-        self.setTarget.emit(self.target)
+        self.sendMessage.emit(f"set {self.target};")
     
     def changeTarget(self, delta):
-        """METHOD: changeTarget
+        """SLOT: changeTarget
         
-        Applies a numeric change to the stored target value and directs the GUI to show that change.
+        Applies a numeric change to the stored target value and directs the QLCDNumber to show that change.
         
-        Called by:
-            none
+        Expect:
+            float: The amount by which to shift the target value
         
-        Arguments:
-            int/float: The amount by which to shift the target value
-        
-        Returns:
-            none
-        
-        Emits:
-            displayNumber
+        Connects to:
+            QPushButton.clicked (MainWindow.fpsUpButton, MainWindow.fpsDownButton, MainWindow.psiUpButton, MainWindow.psiDownButton)
         """
         if self.lock.tryLock():  # This method can be called many times in rapid succession so it's ok if it can't
             self.changing = True # acquire the lock as long as it was acquired by a previous call to this method
@@ -88,7 +84,7 @@ class FeedbackDisplay(QObject):
     def finalize(self):
         """METHOD: finalize
         
-        Alert the rest of the system that the target value has changed and instructs the GUI to resume displaying current values
+        Alert the rest of the system that the target value has changed and instructs the QLCDNumber to resume displaying current values
         
         Called by:
             changeTarget
@@ -100,29 +96,26 @@ class FeedbackDisplay(QObject):
             none
         
         Emits:
-            displayNumber, setTarget
+            displayNumber, sendMessage
         """
         self.lcd.setStyleSheet("border: 3px solid #61136e;\n"
                                "border-radius: 8px;\n"
                                "color: #000000")
         self.displayNumber.emit(self.value)
-        self.setTarget.emit(f"set {self.target};")
+        self.sendMessage.emit(f"set {self.target};")
         self.changing = False
         self.lock.unlock()
     
     def output(self, value):
-        """METHOD: output
+        """SLOT: output
         
-        Instructs the GUI to update the displayed value only if the display isn't doing something else already
+        Instructs the QLCDNumber to update the displayed value only if the display isn't doing something else already
         
-        Called by:
-            none
+        Expects:
+            float - The new number to display
         
-        Arguments:
-            none
-        
-        Returns:
-            none
+        Connects to:
+            MetroMini.outputData
         
         Emits:
             displayValue
@@ -138,7 +131,7 @@ class FeedbackDisplay(QObject):
         Returns the current target value
         
         Called by:
-            none
+            TODO: FeedbackDisplay.getTarget callers
         
         Arguments:
             none

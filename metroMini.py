@@ -1,23 +1,60 @@
-'''
-Created on Apr 29, 2021
-
-@author: Jeffrey Blum
-'''
 import glob, sys
 from PyQt5.QtSerialPort import QSerialPort
 from PyQt5.QtCore import pyqtSignal, QIODevice, QObject, QMutex
+#TODO: Add signals from main
 
 # _UPDATE_INTERVAL = 3
 
 class MetroMini(QObject):
-    '''
-    Wrapper class for communicating with the peripheral microcontroller over serial
-    '''
+    """CLASS: MetroMini
+    
+    This class wraps the serial port used to communicate with the peripheral MetroMini processor.
+    
+    SIGNALS                         SLOTS
+    ------------------    ---------------
+    outputData (float)    ()        begin
+    readyToWrite (str)    ()     readData
+                          (str) writeData
+    """
+    
     readyToWrite = pyqtSignal(str)
-    readComplete = pyqtSignal()
+    """SIGNAL: readyToWrite
+            
+    Emitted internally when a message can be sent as soon as the serial port is available
+            
+    Broadcasts:
+        str - The message to be sent
+            
+    Connects to:
+        MetroMini.writeData
+    """
+    
     outputData = pyqtSignal(float)
+    """SIGNAL: outputData
+            
+    Sends a new value to be display on the GUI
+            
+    Broadcasts:
+        float - The new value
+            
+    Connects to:
+        feedbackDisplay.output (MainWindow.psiDisplay)
+    """
     
     def begin(self):
+        """SLOT: begin
+                
+        Launches the serial read/write signal loop
+                
+        Expects:
+            none
+                
+        Connects to:
+            QThread.started
+        
+        Emits:
+            readyToWrite
+        """
         path = glob.glob("/dev/tty.usbserial-*")
         if len(path) == 1:
             path = path[0]
@@ -39,6 +76,19 @@ class MetroMini(QObject):
         self.readyToWrite.emit(self.reqMsg)
     
     def readData(self):
+        """SLOT: readData
+                
+        Reads data from the serial port when it's available
+                
+        Expects:
+            none
+                
+        Connects to:
+            QSerialPort.readyRead
+        
+        Emits:
+            outputData
+        """
         if self.lock.tryLock(5):
             bytesIn = self.serialPort.readAll()
             for b in bytesIn:
@@ -56,6 +106,16 @@ class MetroMini(QObject):
             print("Failed to acquire lock...")   
     
     def writeData(self, msg):
+        """SLOT: writeData
+                
+        Writes data to the serial port
+                
+        Expects:
+            str - The message to be sent
+                
+        Connects to:
+            feedbackDisplay.sendMessage (MainWindow.psiDisplay)
+        """
         self.lock.lock()
         self.serialPort.write(msg.encode())
         self.serialPort.waitForBytesWritten()

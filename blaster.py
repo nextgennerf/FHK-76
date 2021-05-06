@@ -11,10 +11,12 @@ class FHK76(QObject):
     
     This class represents the FHK76 as whole, creating the I/O object and facilitating communication between them and the GUI as necessary
     
-    SIGNALS          SLOTS
-    -------------    -----
-    turnOn  (int)     none
-    turnOff (int)
+    SIGNALS                       SLOTS
+    -------------    ------------------
+    turnOff (int)    ()   releaseSafety
+    turnOn  (int)    ()       setSafety
+                     (bool) toggleLaser
+                     (bool) toggleLight
     """
     
     turnOn = pyqtSignal(int)
@@ -26,7 +28,7 @@ class FHK76(QObject):
         int - The ID number of the indicator that should turn on
     
     Connects to:
-        Indicator.turnOn, LEDButton.turnOn
+        Indicator.turnOn
     """
     
     turnOff = pyqtSignal(int)
@@ -38,14 +40,13 @@ class FHK76(QObject):
         int - The ID number of the indicator that should turn off
     
     Connects to:
-        Indicator.turnOff, LEDButton.turnOff
+        Indicator.turnOff
     """
     
     def __init__(self, mb, fps, sim):
         super().__init__()
         
-        self.trigger = TouchTrigger(sim)
-        #TOSO: additional trigger signals
+        self.trigger = TouchTrigger(sim, self)
         
         self.safety = Button(sim)
         self.safety.pressed.connect(self.setSafety)
@@ -57,8 +58,7 @@ class FHK76(QObject):
                 l = LEDButton(sim, i)
                 self.modeButtons[m] = l
                 self.turnOn.connect(l.turnOn)
-                self.turnOff.connect(l.turnOff)
-                #TODO: Button signal
+                l.pressed.connect(mb.button(i).click)
 
         self.mode = None
         self.fps = fps
@@ -68,7 +68,7 @@ class FHK76(QObject):
         
         self.safetyLED = Indicator(sim, False, ["red", "green"])
         self.laser = Indicator(sim)
-        self.light = Indicator(sim)        
+        self.light = Indicator(sim)
         for ind in [self.safetyLED, self.laser, self.light]:
             self.turnOn.connect(ind.turnOn)
             self.turnOff.connect(ind.turnOff)
@@ -85,7 +85,7 @@ class FHK76(QObject):
             none
         
         Connects to:
-            Button.pressed
+            Button.pressed (FHK76.safety)
         
         Emits:
             turnOff
@@ -101,7 +101,7 @@ class FHK76(QObject):
             none
         
         Connects to:
-            Button.released
+            Button.released (FHK76.safety)
         
         Emits:
             turnOn
@@ -117,7 +117,7 @@ class FHK76(QObject):
             bool - Whether the flashlight should be turned on
         
         Connects to:
-            none
+            QPushButton.toggled (MainWindow.lightButton)
         
         Emits:
             turnOff
@@ -133,18 +133,27 @@ class FHK76(QObject):
             bool - Whether the flashlight should be turned on
         
         Connects to:
-            none
+            QPushButton.toggled (MainWindow.lightButton)
         
         Emits:
             turnOff
         """
         self.turnOn.emit(5) if on else self.turnOff.emit(5)
-    
-    #TODO: Continue comment creation here   
-    '''
-    User interactions with the primary trigger
-    '''
+      
     async def triggerAction(self, val):
+        """METHOD: triggerAction
+        
+        Coordinates the blaster's reaction to user interaction with the main trigger
+        
+        Called by:
+            TODO: FHK76.triggerAction callers
+        
+        Arguments:
+            int - The type of trigger interaction
+        
+        Returns:
+            none
+        """
         if val == 0: #trigger is touched
             self.belt.turnOn()
             for f in self.flywheels:
@@ -160,40 +169,94 @@ class FHK76(QObject):
             for f in self.flywheels:
                 f.sleep()
     
-    '''
-    Slot methods for the GUI (may change after motor classes are finished)
-    '''
     def changeMode(self, modeID):
+        """METHOD: changeMode
+        
+        Coordinates the blaster's reaction to user interaction with the main trigger
+        
+        Called by:
+            MainWindow.__init__
+        
+        Arguments:
+            int - The type of trigger interaction
+        
+        Returns:
+            none
+        """
         self.turnOff.emit(self.modeID)
         self.mode = modeID
         self.turnOn.emit(self.modeID)
         
     def setBurstValue(self, val):
+        """METHOD: setBurstValue
+                
+        Changes the number of rounds fired on every trigger pull in burst fire mode
+                
+        Called by:
+            MainWindow.updateBurstValue
+                
+        Arguments:
+            int - The number of rounds per burst
+                
+        Returns:
+            none
+        """
         self.burstValue = val
     
     def setFPS(self, val):
+        """METHOD: setFPS
+                
+        Changes the blaster's target FPS
+                
+        Called by:
+            TODO: FHK76.setFPS callers
+                
+        Arguments:
+            float - The target velocity for every round fired
+                
+        Returns:
+            none
+        """
         self.fps = val
     
-    '''
-    Provide display names for I/O if the blaster is being simulated
-    '''
     def nameSimulatedIO(self):
-        i = self.inputs
-        i["trigger"].setName("Trigger")
-        i["safety"].setName("Safety")
-        i["semi"].setName("Semi-automatic fire button")
-        i["burst"].setName("Burst fire button")
-        i["auto"].setName("Automatic fire button")
+        """METHOD: nameSimulatedIO
+                
+        Passes display names to all of the blaster's I/O during simulation
+                
+        Called by:
+            FHK76.__init__
+                
+        Arguments:
+            none
+                
+        Returns:
+            none
+        """
+        self.trigger.setName("Trigger")
+        self.safety.setName("Safety")
+        self.modeButtons["semi"].setName("Semi-automatic fire button")
+        self.modeButtons["burst"].setName("Burst fire button")
+        self.modeButtons["auto"].setName("Automatic fire button")
         self.belt.setName("Belt motor")
         self.flywheels[0].setName("Top flywheel motor")
         self.flywheels[1].setName("Bottom flywheel motor")
         self.safetyLED.setName("Safety LED")
         self.light.setName("Flashlight")
         self.laser.setName("Laser")
-            
-    '''
-    To preserve encapsulation when simulating, all inputs must be connected to the terminal.
-    '''
+    
     def connectSimulator(self, sim):
-        self.inputs["trigger"].connectSimulator("trigger", sim)
-        self.inputs["safety"].connectSimulator("safety", sim)
+        """METHOD: connectSimulator
+                
+        Connect the signals emitted by the terminal simulator to the appropriate slots
+                
+        Called by:
+            __main__
+                
+        Arguments:
+            TerminalSimulator - The terminal simulator to be connected
+                
+        Returns:
+            none
+        """
+        #TODO: add connections

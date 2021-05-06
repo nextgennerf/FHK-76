@@ -3,7 +3,7 @@ from things.ioModule import IOModule
 class Motor(IOModule):
     """This IO Module represents a motor. It is currently under construction.
     """
-    #TODO: finish building
+    #TODO: finish building, add callers from FHK76
 
     def __init__(self, sim, en = None, err = None):
         super().__init__(sim)

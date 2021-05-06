@@ -21,15 +21,12 @@ class IOModule(QObject):
         Stores a name string to be displayed in the terminal when the system is being simulated
         
         Called by:
-            none
+            TODO: iIOModule.setName callers
         
         Arguments:
             str: The displayed name of the input or output
         
         Returns:
-            none
-        
-        Emits:
             none
         """
         if self.simulated:

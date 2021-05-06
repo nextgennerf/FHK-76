@@ -3,7 +3,7 @@ from things.motor import Motor
 class ControlledMotor(Motor):
     """This Motor subclass represents a motor with speed control. It is currently under construction.
     """
-    #TODO: finish building
+    #TODO: finish building, add callers from FHK76
 
     def __init__(self, sim, pwmIn = 0.0, wake = False, en = False, err = False):
         super().__init__(sim, en, err)

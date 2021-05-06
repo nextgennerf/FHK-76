@@ -8,7 +8,7 @@ class Button(IOModule):
     
     SIGNALS        SLOTS
     -----------    -----
-    pressed  ()    
+    pressed  ()     none
     released ()
     """
     
@@ -21,7 +21,7 @@ class Button(IOModule):
         none
     
     Connects to:
-        FHK76.setSafety
+        (FHK76.safety) FHK76.setSafety, (FHK76.modeButtons[*]) QPushButton.click (MainWindow.modeButtons.button(*).click)
     """
         
     released = pyqtSignal()
@@ -33,35 +33,8 @@ class Button(IOModule):
         none
     
     Connects to:
-        FHK76.releaseSafety
+        (FHK76.safety) FHK76.releaseSafety
     """
     
     def __init__(self, sim):
         super().__init__(sim)
-    
-    # def connectSimulator(self, name, sim):
-    #     if self.simulated:
-    #         self.name = name
-    #         self.pressEvent = aio.Event()
-    #         sim.addEvent(name + " press", self.pressEvent)
-    #         self.releaseEvent = aio.Event()
-    #         sim.addEvent(name + " release", self.releaseEvent)
-            
-    # async def loop(self):
-    #     while True:
-    #         if self.state:
-    #             await self.releaseEvent.wait()
-    #             self.state = False
-    #             if self.simulated:
-    #                 print(self.name + " released")
-    #             if "release_call" in self.calls:
-    #                 self.calls["release_call"]()
-    #             self.releaseEvent.clear()
-    #         else:
-    #             await self.pressEvent.wait()
-    #             self.state = True
-    #             if self.simulated:
-    #                 print(self.name + " pressed")
-    #             if "press_call" in self.calls:
-    #                 self.calls["press_call"]()
-    #             self.pressEvent.clear()

@@ -1,6 +1,6 @@
 """Created by Jeffrey Blum for Next Gen Nerf
 
-This main file creates a wrapper around the translated GUI file with the methods needed to interact with the blaster.
+This program executes on a BeagleBone Black to run the FHK-76 blaster.
 
 Indicator Numbers are as follows:
 0 - Semi-automatic fire selector button LED
@@ -9,7 +9,6 @@ Indicator Numbers are as follows:
 3 - Safety indicator LED
 4 - Flashlight
 5 - Laser
-(((UPDATE blaster.py IF THIS CHANGES)))
 """
 
 import sys, os, json
@@ -26,6 +25,19 @@ from feedbackDisplay import FeedbackDisplay
 useSimulator = True
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+    """CLASS: MainWindow
+    
+    This class wraps the UI translated into Python from mainwindow.ui and adds methods to interact with the rest of the blaster.
+    
+    SIGNALS                                          SLOTS
+    ----------------------------    ----------------------
+    QButtonGroup.idClicked (int)    (int) updateBurstValue
+    QPushButton.clicked       ()
+    QPushButton.toggled   (bool)
+    QSlider.valueChanged   (int)
+    QThread.started           ()
+    """
+    
     def __init__(self, *args, obj=None, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
@@ -50,10 +62,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.fpsDisplay = FeedbackDisplay(self.fpsLCD, settings["fps"])
         self.psiDisplay = FeedbackDisplay(self.psiLCD, settings["psi"])
         
-        self.FPSupButton.clicked.connect(lambda: self.fpsDisplay.changeTarget(5))
-        self.FPSdownButton.clicked.connect(lambda: self.fpsDisplay.changeTarget(-5))
-        self.PSIupButton.clicked.connect(lambda: self.psiDisplay.changeTarget(5))
-        self.PSIdownButton.clicked.connect(lambda: self.psiDisplay.changeTarget(-5))
+        self.FPSupButton.clicked.connect(lambda: self.fpsDisplay.changeTarget(5.0))
+        self.FPSdownButton.clicked.connect(lambda: self.fpsDisplay.changeTarget(-5.0))
+        self.PSIupButton.clicked.connect(lambda: self.psiDisplay.changeTarget(5.0))
+        self.PSIdownButton.clicked.connect(lambda: self.psiDisplay.changeTarget(-5.0))
         
         self.lightButton.toggled.connect(self.blaster.toggleLight)
         self.laserButton.toggled.connect(self.blaster.toggleLaser)
@@ -62,17 +74,53 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.uc = MetroMini()
         self.uc.moveToThread(self.thread)
         self.thread.started.connect(self.uc.begin)
-        self.psiDisplay.setTarget.connect(self.uc.writeData)
-        self.uc.outputData.connect(self.psiDisplay.updateoutput)
+        self.psiDisplay.sendMessage.connect(self.uc.writeData)
+        self.uc.outputData.connect(self.psiDisplay.output)
         self.thread.start()
     
     def getBlaster(self):
+        """METHOD: getBlaster
+                
+        Returns the blaster object
+                
+        Called by:
+            __main__
+                
+        Arguments:
+            none
+                
+        Returns:
+            FHK76 - The blaster object
+        """
         return self.blaster
     
     def getModeButtons(self):
+        """METHOD: getModeButtons
+                
+        Returns the button group from the GUI
+                
+        Called by:
+            __main__
+                
+        Arguments:
+            none
+                
+        Returns:
+            QButtonGroup - The container for the three mode buttons on the GUI
+        """
         return self.modeButtons
 
     def updateBurstValue(self, val):
+        """SLOT: updateBurstValue
+                
+        Changes the burst mode button's text and alerts the blaster when the burst size is changed
+                
+        Expects:
+            int - The new burst size
+                
+        Connects to:
+            QSlider.valueChanged
+        """
         self.burstButton.setText("BURST: " + str(val))
         self.blaster.setBurstValue(val)
     
@@ -93,9 +141,6 @@ if __name__ == '__main__':
     with eLoop:
         window = MainWindow()
         window.show()
-        i = window.getBlaster().getInputs()
-        aio.create_task(i["trigger"].loop())
-        aio.create_task(i["safety"].loop())
         if useSimulator:
             tSim = TerminalSimulator(window.getModeButtons())
             window.getBlaster().connectSimulator(tSim)
