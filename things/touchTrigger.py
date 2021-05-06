@@ -3,7 +3,7 @@ Created on Apr 24, 2021
 
 @author: Jeffrey Blum
 '''
-
+from PyQt5.QtCore import pyqtSignal, QState, QStateMachine
 import asyncio as aio
 from things.button import Button
 from asyncio.tasks import FIRST_COMPLETED
@@ -12,14 +12,25 @@ class TouchTrigger(Button):
     '''
     Button subclass for the trigger which has a capacitive sensor
     '''
+    touched = pyqtSignal()
+    letGo = pyqtSignal()
 
     def __init__(self, sim):
-        '''
-        Constructor
-        '''
         super().__init__(sim)
-        self.state = 0 #0 = nothing, 1 = touched, 2 = pulled
-    
+        self.stateLoop = QStateMachine()
+        self.offState = QState()
+        self.revState = QState()
+        self.onState = QState()
+        
+        self.offState.addTransition(self, self.touched, self.revState)
+        self.revState.addTransition(self, self.letGo, self.offState)
+        self.revState.addTransition(self, self.pressed, self.onState)
+        self.onState.addTransition(self, self.released, self.revState)
+        
+        for s in [self.offState, self.revState, self.onState]:
+            self.stateLoop.addState(s)
+        self.stateLoop.setInitialState(self.offState)
+         
     def connectSimulator(self, name, sim):
         super().connectSimulator(name, sim)
         if self.simulated:

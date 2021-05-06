@@ -1,39 +1,36 @@
-'''
-Created on Apr 26, 2021
+from PyQt5.QtCore import QObject
 
-@author: Jeffrey Blum
-'''
-
-import asyncio
-
-class IOModule:
-    '''
-    This is the highest level class inherited by all modules.
-    '''
+class IOModule(QObject):
+    """CLASS: IOModule
+    
+    This superclass is inherited by all classes that represent physical inputs and outputs
+    
+    SIGNALS    SLOTS
+    -------    -----
+    none        none
+    """
 
     def __init__(self, sim):
-        '''
-        Inputs get constructed with a reference to the blaster for triggering events. Outputs don't need that.
-        '''
+        super().__init__()
         self.simulated = sim
-        self.name = None
+        self.name = None 
     
-    '''
-    Input loop methods need a standardized name so they can be gathered easily
-    '''
-    async def loop(self):
-        while True:
-            await asyncio.sleep(10)    
-    
-    '''
-    Inputs need to send an event to the terminal simulator
-    '''
-    def connectSimulator(self):
-        pass
-    
-    '''
-    Simulated IO need names but we don't want that clogging the constructor.
-    '''
     def setName(self, name):
+        """METHOD: setName
+        
+        Stores a name string to be displayed in the terminal when the system is being simulated
+        
+        Called by:
+            none
+        
+        Arguments:
+            str: The displayed name of the input or output
+        
+        Returns:
+            none
+        
+        Emits:
+            none
+        """
         if self.simulated:
             self.name = name

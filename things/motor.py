@@ -1,19 +1,11 @@
-'''
-Created on Apr 25, 2021
-
-@author: Jeffrey Blum
-'''
 from things.ioModule import IOModule
 
 class Motor(IOModule):
-    '''
-    Base class for motor outputs
-    '''
+    """This IO Module represents a motor. It is currently under construction.
+    """
+    #TODO: finish building
 
     def __init__(self, sim, en = None, err = None):
-        '''
-        Constructor
-        '''
         super().__init__(sim)
         self.en = en
         self.error = err

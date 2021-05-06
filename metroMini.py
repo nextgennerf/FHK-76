@@ -3,7 +3,7 @@ Created on Apr 29, 2021
 
 @author: Jeffrey Blum
 '''
-import glob#, sys
+import glob, sys
 from PyQt5.QtSerialPort import QSerialPort
 from PyQt5.QtCore import pyqtSignal, QIODevice, QObject, QMutex
 
@@ -24,10 +24,10 @@ class MetroMini(QObject):
         else:
             if len(path) == 0:
                 raise(RuntimeError, "No USB serial device connected")
-                # sys.exit()
+                sys.exit()
             else:
                 raise(RuntimeError, "More than one USB serial device connected")
-                # sys.exit()
+                sys.exit()
         self.serialPort = QSerialPort(path)
         self.serialPort.setBaudRate(9600)
         self.serialPort.open(QIODevice.ReadWrite)

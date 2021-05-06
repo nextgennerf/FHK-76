@@ -1,8 +1,4 @@
-'''
-Created on Apr 26, 2021
-
-@author: Jeffrey Blum
-'''
+from PyQt5.QtCore import QObject, pyqtSignal
 from things.touchTrigger import TouchTrigger
 from things.button import Button
 from things.LEDbutton import LEDButton
@@ -10,55 +6,141 @@ from things.motor import Motor
 from things.controlledMotor import ControlledMotor
 from things.indicator import Indicator
 
-class FHK76:
-    '''
-    Top-level class, represents the blaster as a whole
-    '''
+class FHK76(QObject):
+    """CLASS: FHK76
     
-    def __init__(self, gui, fps, sim):
-        '''
-        Constructor needs a boolean to decide whether to create a real or fake blaster. The asyncio loop coordinates all input loops and triggers the
-        appropriate outputs.
-        '''
+    This class represents the FHK76 as whole, creating the I/O object and facilitating communication between them and the GUI as necessary
+    
+    SIGNALS          SLOTS
+    -------------    -----
+    turnOn  (int)     none
+    turnOff (int)
+    """
+    
+    turnOn = pyqtSignal(int)
+    """SIGNAL: turnOn
+    
+    Instructs a given indicator to turn on
+    
+    Broadcasts:
+        int - The ID number of the indicator that should turn on
+    
+    Connects to:
+        Indicator.turnOn, LEDButton.turnOn
+    """
+    
+    turnOff = pyqtSignal(int)
+    """SIGNAL: pressed
+    
+    Instructs a given indicator to turn on.
+    
+    Broadcasts:
+        int - The ID number of the indicator that should turn off
+    
+    Connects to:
+        Indicator.turnOff, LEDButton.turnOff
+    """
+    
+    def __init__(self, mb, fps, sim):
+        super().__init__()
         
-        mb = gui.getModeButtons()
-        self.inputs = {"trigger":TouchTrigger(sim), "semi":LEDButton(sim, mb, 0), "burst":LEDButton(sim, mb, 1), "auto":LEDButton(sim, mb, 2),
-                       "safety":Button(sim, initial_state = True, press_call = self.setSafety, release_call = self.releaseSafety)}
+        self.trigger = TouchTrigger(sim)
+        #TOSO: additional trigger signals
+        
+        self.safety = Button(sim)
+        self.safety.pressed.connect(self.setSafety)
+        self.safety.released.connect(self.releaseSafety)
+        
+        with ["semi", "burst", "auto"] as modes:
+            for m in modes:
+                i = modes.index[m]
+                l = LEDButton(sim, i)
+                self.modeButtons[m] = l
+                self.turnOn.connect(l.turnOn)
+                self.turnOff.connect(l.turnOff)
+                #TODO: Button signal
+
         self.mode = None
         self.fps = fps
         
         self.belt = Motor(sim)
         self.flywheels = [ControlledMotor(sim), ControlledMotor(sim)]
+        
         self.safetyLED = Indicator(sim, False, ["red", "green"])
         self.laser = Indicator(sim)
-        self.light = Indicator(sim)     
+        self.light = Indicator(sim)        
+        for ind in [self.safetyLED, self.laser, self.light]:
+            self.turnOn.connect(ind.turnOn)
+            self.turnOff.connect(ind.turnOff)
+        
         if sim:
             self.nameSimulatedIO()
     
-    '''
-    Return the dictionary of inputs
-    '''
-    def getInputs(self):
-        return self.inputs
-    
-    '''
-    Change the color of the safety indicator to red
-    '''
     def setSafety(self):
-        self.safetyLED.turnOff()
+        """SLOT: setSafety
+        
+        Turns the safety LED indicator red (off)
+        
+        Expects:
+            none
+        
+        Connects to:
+            Button.pressed
+        
+        Emits:
+            turnOff
+        """
+        self.turnOff.emit(3)
     
-    '''
-    Change the color of the safety indicator to green
-    '''
     def releaseSafety(self):
-        self.safetyLED.turnOn()
+        """SLOT: releaseSafety
+        
+        Turns the safety LED indicator green (on)
+        
+        Expects:
+            none
+        
+        Connects to:
+            Button.released
+        
+        Emits:
+            turnOn
+        """
+        self.turnOn.emit(3)
     
     def toggleLight(self, on):
-        self.light.turnOn() if on else self.light.turnOff()
+        """SLOT: toggleLight
+        
+        Changes the state of the flashlight
+        
+        Expects:
+            bool - Whether the flashlight should be turned on
+        
+        Connects to:
+            none
+        
+        Emits:
+            turnOff
+        """
+        self.turnOn.emit(4) if on else self.turnOff.emit(4)
     
     def toggleLaser(self, on):
-        self.laser.turnOn() if on else self.laser.turnOff()
+        """SLOT: toggleLaser
         
+        Changes the state of the laser
+        
+        Expects:
+            bool - Whether the flashlight should be turned on
+        
+        Connects to:
+            none
+        
+        Emits:
+            turnOff
+        """
+        self.turnOn.emit(5) if on else self.turnOff.emit(5)
+    
+    #TODO: Continue comment creation here   
     '''
     User interactions with the primary trigger
     '''
@@ -79,14 +161,12 @@ class FHK76:
                 f.sleep()
     
     '''
-    Callback methods for the GUI (may delete after motor classes are finished)
+    Slot methods for the GUI (may change after motor classes are finished)
     '''
     def changeMode(self, modeID):
-        modes = ["semi","burst","auto"]
-        if self.mode is not None:
-            self.inputs[self.mode].turnOff()
-        self.mode = modes[modeID]
-        self.inputs[self.mode].turnOn()
+        self.turnOff.emit(self.modeID)
+        self.mode = modeID
+        self.turnOn.emit(self.modeID)
         
     def setBurstValue(self, val):
         self.burstValue = val
@@ -110,11 +190,10 @@ class FHK76:
         self.safetyLED.setName("Safety LED")
         self.light.setName("Flashlight")
         self.laser.setName("Laser")
-    
+            
     '''
     To preserve encapsulation when simulating, all inputs must be connected to the terminal.
     '''
     def connectSimulator(self, sim):
-        for i in list(self.inputs):
-            self.inputs[i].connectSimulator(i, sim)
-        
+        self.inputs["trigger"].connectSimulator("trigger", sim)
+        self.inputs["safety"].connectSimulator("safety", sim)

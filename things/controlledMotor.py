@@ -1,20 +1,11 @@
-'''
-Created on Apr 26, 2021
-
-@author: Jeffrey Blum
-'''
 from things.motor import Motor
 
 class ControlledMotor(Motor):
-    '''
-    Subclass for a motor with a controller
-    '''
-
+    """This Motor subclass represents a motor with speed control. It is currently under construction.
+    """
+    #TODO: finish building
 
     def __init__(self, sim, pwmIn = 0.0, wake = False, en = False, err = False):
-        '''
-        Constructor
-        '''
         super().__init__(sim, en, err)
         if pwmIn < 0.15:
             self.dutyCycle = 0

@@ -5,16 +5,27 @@ Created on Apr 24, 2021
 '''
 import asyncio
 import concurrent.futures as cf
+from PyQt5.QtCore import QObject, pyqtSignal
 
-class TerminalSimulator:
+class TerminalSimulator(QObject):
     '''
     A terminal call/response module that simulates the blaster.
     '''
+    semiButtonPressed = pyqtSignal()
+    burstButtonPressed = pyqtSignal()
+    autoButtonPressed = pyqtSignal()
+    safetyPressed = pyqtSignal()
+    safetyReleased = pyqtSignal()
+    triggerTouched = pyqtSignal()
 
-    def __init__(self):
+    def __init__(self, mb):
         '''
         Constructor
         '''
+        super().__init__()
+        self.semiButtonPressed.connect(mb.button(0).click)
+        self.burstButtonPressed.connect(mb.button(1).click)
+        self.autoButtonPressed.connect(mb.button(2).click)
         self.events = {}
     
     async def run(self):
@@ -34,7 +45,12 @@ class TerminalSimulator:
                 else:
                     self.events[command].set()
             elif cWords[1] == "press":
-                self.events[command].set()
+                if cWords[0] == "semi":
+                    self.semiButtonPressed.emit()
+                elif cWords[0] == "burst":
+                    self.burstButtonPressed.emit()
+                elif cWords[0] == "auto":
+                    self.autoButtonPressed.emit()
             elif command == "safety on":
                 self.events["safety press"].set()
             elif command == "safety off":

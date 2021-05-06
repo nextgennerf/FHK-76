@@ -3,44 +3,15 @@ Created on Apr 24, 2021
 
 @author: Jeffrey Blum
 '''
-import asyncio
-from PyQt5.QtCore import QObject, pyqtSignal
 from things.button import Button
+from things.indicator import Indicator
 
-class LEDButton(Button, QObject):
+class LEDButton(Button, Indicator):
     '''
     Button subclass with LED ring
     '''
-    updateMode = pyqtSignal()
 
-    def __init__(self, sim, buttons, modeID):
-        '''
-        Constructor
-        '''
+    def __init__(self, sim, modeID):
         Button.__init__(self, sim)
-        QObject.__init__(self)
+        Indicator.__init__(self, sim, modeID)
         self.modeID = modeID
-        self.updateMode.connect(buttons.button(modeID).click)
-        
-
-    def connectSimulator(self, name, sim):
-        if self.simulated:
-            self.pressEvent = asyncio.Event()
-            sim.addEvent(name + " press", self.pressEvent)
-            
-    async def loop(self):
-        while True:
-            await self.pressEvent.wait()
-            if not self.state:
-                print(self.name + " pressed")
-                self.state = True
-                self.updateMode.emit()
-                self.pressEvent.clear()
-    
-    def turnOn(self):
-        if self.name is not None:
-            print(self.name + " LED is now on")
-    
-    def turnOff(self):
-        if self.name is not None:
-            print(self.name + " LED is now off")
