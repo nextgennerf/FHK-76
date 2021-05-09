@@ -21,10 +21,10 @@ class IOModule(QObject):
         Stores a name string to be displayed in the terminal when the system is being simulated
         
         Called by:
-            TODO: iIOModule.setName callers
+            FHK76.nameSimulatedIO
         
         Arguments:
-            str: The displayed name of the input or output
+            str - The displayed name of the input or output
         
         Returns:
             none

@@ -2,7 +2,7 @@ import asyncio
 import concurrent.futures as cf
 from PyQt5.QtCore import QObject, pyqtSignal
 
-#TODO: Continue migrating to Qt
+#TODO: Finish migrating to Qt
 
 class TerminalSimulator(QObject):
     """CLASS: TerminalSimulator
@@ -16,6 +16,9 @@ class TerminalSimulator(QObject):
     safetyPressed      ()
     safetyReleased     ()
     semiButtonPressed  ()
+    triggerPulled     ()
+    triggerRelaxed     ()
+    triggerReleased    ()
     triggerTouched     ()
     """
     
@@ -64,7 +67,7 @@ class TerminalSimulator(QObject):
         none
             
     Connects to:
-        TODO:
+        Button.pressed (FHK76.trigger)
     """
     
     safetyReleased = pyqtSignal()
@@ -76,7 +79,7 @@ class TerminalSimulator(QObject):
         none
             
     Connects to:
-        TODO:
+        Button.released (FHK76.released)
     """
     
     triggerTouched = pyqtSignal()
@@ -88,7 +91,43 @@ class TerminalSimulator(QObject):
         none
             
     Connects to:
-        TODO:
+        TouchTrigger.touched
+    """
+    
+    triggerPulled = pyqtSignal()
+    """SIGNAL: triggerPulled
+            
+    Simulates pulling the trigger
+            
+    Broadcasts:
+        none
+            
+    Connects to:
+       TouchTrigger.pressed
+    """
+    
+    triggerRelaxed = pyqtSignal()
+    """SIGNAL: triggerRelaxed
+            
+    Simulates relaxing the trigger but keeping your finger in contact with it
+            
+    Broadcasts:
+        none
+            
+    Connects to:
+        TouchTrigger.released
+    """
+    
+    triggerReleased = pyqtSignal()
+    """SIGNAL: triggerReleased
+            
+    Simulates moving your finger away from the trigger
+            
+    Broadcasts:
+        none
+            
+    Connects to:
+        TouchTrigger.letGo
     """
 
     def __init__(self, mb):
@@ -125,10 +164,14 @@ class TerminalSimulator(QObject):
                 print("   safety [on, off]")
                 print("   [semi, burst, auto] press")
             elif cWords[0] == "trigger":
-                if cWords[1] == "pull":
-                    #TODO: self.events["trigger press"].set()
-                else:
-                    #TODO: self.events[command].set()
+                if cWords[1] == "touch":
+                    self.triggerTouched.emit()
+                elif cWords[1] == "pull":
+                    self.triggerPulled.emit()
+                elif cWords[1] == "relax":
+                    self.triggerRelaxed.emit()
+                elif cWords[1] == "release":
+                    self.triggerReleased.emit()
             elif cWords[1] == "press":
                 if cWords[0] == "semi":
                     self.semiButtonPressed.emit()
@@ -137,8 +180,8 @@ class TerminalSimulator(QObject):
                 elif cWords[0] == "auto":
                     self.autoButtonPressed.emit()
             elif command == "safety on":
-                #TODO: self.events["safety press"].set()
+                self.safetyPressed.emit()
             elif command == "safety off":
-                #TODO: self.events["safety release"].set()
+                self.safetyReleased.emit()
             else:
                 print('Invalid command. To see a list of valid commands, enter "help".')

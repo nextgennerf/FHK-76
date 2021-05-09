@@ -1,7 +1,6 @@
 import glob, sys
 from PyQt5.QtSerialPort import QSerialPort
 from PyQt5.QtCore import pyqtSignal, QIODevice, QObject, QMutex
-#TODO: Add signals from main
 
 # _UPDATE_INTERVAL = 3
 
@@ -10,11 +9,10 @@ class MetroMini(QObject):
     
     This class wraps the serial port used to communicate with the peripheral MetroMini processor.
     
-    SIGNALS                         SLOTS
-    ------------------    ---------------
-    outputData (float)    ()        begin
-    readyToWrite (str)    ()     readData
-                          (str) writeData
+    SIGNALS                               SLOTS
+    ------------------------    ---------------
+    newDataAvailable (float)    ()        begin
+                                (str) writeData
     """
     
     readyToWrite = pyqtSignal(str)
@@ -29,16 +27,16 @@ class MetroMini(QObject):
         MetroMini.writeData
     """
     
-    outputData = pyqtSignal(float)
-    """SIGNAL: outputData
+    newDataAvailable = pyqtSignal(float)
+    """SIGNAL: newDataAvailable
             
-    Sends a new value to be display on the GUI
+    Emitted when a new pressure value has been received from the MetroMini
             
     Broadcasts:
         float - The new value
             
     Connects to:
-        feedbackDisplay.output (MainWindow.psiDisplay)
+        FeedbackDisplay.DisplayState.updateDisplay (MainWindow.psiDisplay.defaultState)
     """
     
     def begin(self):
@@ -95,7 +93,7 @@ class MetroMini(QObject):
                 if b == 10: # This translates to the \n character which means the message is complete
                     msg = self.buffer.decode().strip()
                     print("Received message:", msg)
-                    self.outputData.emit(float(msg))
+                    self.newDataAvailable.emit(float(msg))
                     print("Requesting data from Metro Mini")
                     self.readyToWrite(self.reqMsg)
                     break
@@ -114,7 +112,7 @@ class MetroMini(QObject):
             str - The message to be sent
                 
         Connects to:
-            feedbackDisplay.sendMessage (MainWindow.psiDisplay)
+            FeedbackDisplay.messageReady (MainWindow.psiDisplay)
         """
         self.lock.lock()
         self.serialPort.write(msg.encode())

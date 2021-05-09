@@ -140,19 +140,16 @@ class FHK76(QObject):
         """
         self.turnOn.emit(5) if on else self.turnOff.emit(5)
       
-    async def triggerAction(self, val):
-        """METHOD: triggerAction
+    def triggerStateChange(self, val):
+        """SLOT: triggerStateChange
         
         Coordinates the blaster's reaction to user interaction with the main trigger
         
-        Called by:
-            TODO: FHK76.triggerAction callers
+        Expects:
+            int - A number representing the state transition that occurred
         
-        Arguments:
-            int - The type of trigger interaction
-        
-        Returns:
-            none
+        Connects to:
+            QState.entered (TouchTrigger.onState, TouchTrigger.offState), QState.exited (TouchTrigger.onState, TouchTrigger.offState)
         """
         if val == 0: #trigger is touched
             self.belt.turnOn()
@@ -259,4 +256,12 @@ class FHK76(QObject):
         Returns:
             none
         """
-        #TODO: add connections
+        sim.semiButtonPressed.connect(self.modeButtons["semi"].pressed)
+        sim.burstButtonPressed.connect(self.modeButtons["burst"].pressed)
+        sim.autoButtonPressed.connect(self.modeButtons["auto"].pressed)
+        sim.safetyPressed.connect(self.safety.pressed)
+        sim.safetyReleased.connect(self.safety.released)
+        sim.triggerTouched.connect(self.trigger.touched)
+        sim.triggerPulled.connect(self.trigger.pressed)
+        sim.triggerRelaxed.connect(self.trigger.released)
+        sim.triggerReleased.connect(self.trigger.letGo)

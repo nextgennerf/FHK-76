@@ -11,8 +11,7 @@ Indicator Numbers are as follows:
 5 - Laser
 """
 
-import sys, os, json
-import asyncio as aio
+import sys, os, json, asyncio
 from qasync import QEventLoop
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThread
@@ -59,9 +58,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.blaster.changeMode(self.modeButtons.checkedId())
         self.updateBurstValue(settings[:"burst"])
         
-        self.fpsDisplay = FeedbackDisplay(self.fpsLCD, settings["fps"])
-        self.psiDisplay = FeedbackDisplay(self.psiLCD, settings["psi"])
+        self.thread = QThread()
+        self.uc = MetroMini()
+        self.uc.moveToThread(self.thread)
+        self.thread.started.connect(self.uc.begin)
         
+        self.fpsDisplay = FeedbackDisplay(self.fpsLCD, settings["fps"])
+        self.psiDisplay = FeedbackDisplay(self.psiLCD, settings["psi"], self.uc, "set {0};")
+        
+        self.psiDisplay.messageReady.connect(self.uc.writeData)
+        self.uc.newDataAvailable.connect(self.psiDisplay.getDefaultState().updateDisplay)
+        self.thread.start()
+        
+        #FUTURE: Allow for finer control of target values
         self.FPSupButton.clicked.connect(lambda: self.fpsDisplay.changeTarget(5.0))
         self.FPSdownButton.clicked.connect(lambda: self.fpsDisplay.changeTarget(-5.0))
         self.PSIupButton.clicked.connect(lambda: self.psiDisplay.changeTarget(5.0))
@@ -69,14 +78,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         
         self.lightButton.toggled.connect(self.blaster.toggleLight)
         self.laserButton.toggled.connect(self.blaster.toggleLaser)
-        
-        self.thread = QThread()
-        self.uc = MetroMini()
-        self.uc.moveToThread(self.thread)
-        self.thread.started.connect(self.uc.begin)
-        self.psiDisplay.sendMessage.connect(self.uc.writeData)
-        self.uc.outputData.connect(self.psiDisplay.output)
-        self.thread.start()
     
     def getBlaster(self):
         """METHOD: getBlaster
@@ -136,7 +137,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     eLoop = QEventLoop(app)
-    aio.set_event_loop(eLoop)
+    asyncio.set_event_loop(eLoop)
     
     with eLoop:
         window = MainWindow()
@@ -144,5 +145,5 @@ if __name__ == '__main__':
         if useSimulator:
             tSim = TerminalSimulator(window.getModeButtons())
             window.getBlaster().connectSimulator(tSim)
-            aio.create_task(tSim.run())
+            asyncio.create_task(tSim.run())
         eLoop.run_forever()
