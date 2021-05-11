@@ -92,7 +92,7 @@ QTabBar::tab:!selected {
 }x</string>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="status">
      <property name="styleSheet">
@@ -793,6 +793,25 @@ QPushButton:checked {
      <attribute name="title">
       <string>led settings</string>
      </attribute>
+     <widget class="QLabel" name="blasterImage">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>75</y>
+        <width>800</width>
+        <height>288</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>blaster.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="data">
      <property name="styleSheet">

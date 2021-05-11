@@ -9,11 +9,15 @@ class IOModule(QObject):
     -------    -----
     none        none
     """
-
-    def __init__(self, sim):
+    
+    def __init__(self, **kwargs):
         super().__init__()
-        self.simulated = sim
-        self.name = None 
+        self.path, self.simulator = None, None
+        if "path" in kwargs:
+            self.path = kwargs["path"]
+        if "simulator" in kwargs:
+            self.simulator = kwargs["simulator"]
+        self.name = None
     
     def setName(self, name):
         """METHOD: setName
@@ -29,5 +33,9 @@ class IOModule(QObject):
         Returns:
             none
         """
-        if self.simulated:
+        if self.simulator is not None:
             self.name = name
+    
+    def printStatus(self, msg):
+        if self.simulator is not None:
+            self.simulator.printStatus(msg)

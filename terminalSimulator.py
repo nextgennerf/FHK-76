@@ -2,7 +2,7 @@ import asyncio
 import concurrent.futures as cf
 from PyQt5.QtCore import QObject, pyqtSignal
 
-#TODO: Finish migrating to Qt
+#TODO: Finish migrating to Qt 
 
 class TerminalSimulator(QObject):
     """CLASS: TerminalSimulator
@@ -82,7 +82,7 @@ class TerminalSimulator(QObject):
         Button.released (FHK76.released)
     """
     
-    triggerTouched = pyqtSignal()
+    hover = pyqtSignal()
     """SIGNAL: triggerTouched
             
     Simulates touching the trigger
@@ -118,7 +118,7 @@ class TerminalSimulator(QObject):
         TouchTrigger.released
     """
     
-    triggerReleased = pyqtSignal()
+    moveAway = pyqtSignal()
     """SIGNAL: triggerReleased
             
     Simulates moving your finger away from the trigger
@@ -165,13 +165,13 @@ class TerminalSimulator(QObject):
                 print("   [semi, burst, auto] press")
             elif cWords[0] == "trigger":
                 if cWords[1] == "touch":
-                    self.triggerTouched.emit()
+                    self.hover.emit()
                 elif cWords[1] == "pull":
                     self.triggerPulled.emit()
                 elif cWords[1] == "relax":
                     self.triggerRelaxed.emit()
                 elif cWords[1] == "release":
-                    self.triggerReleased.emit()
+                    self.moveAway.emit()
             elif cWords[1] == "press":
                 if cWords[0] == "semi":
                     self.semiButtonPressed.emit()

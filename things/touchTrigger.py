@@ -1,7 +1,7 @@
-from PyQt5.QtCore import pyqtSignal, QState, QStateMachine
+from PyQt5.QtCore import pyqtSignal, QState, QStateMachine, QObject
 from things.button import Button
 
-class TouchTrigger(Button, QStateMachine):
+class TouchTrigger(QStateMachine, Button):
     """CLASS: TouchTrigger
     
     This Button subclass adds the capacitive touch functionality of the main trigger using a state machine.
@@ -41,8 +41,7 @@ class TouchTrigger(Button, QStateMachine):
     """
 
     def __init__(self, sim, blaster):
-        Button.__init__(self, sim)
-        QStateMachine.__init__(self)
+        super().__init__(sim)
         self.offState = QState()
         self.revState = QState()
         self.onState = QState()
@@ -56,9 +55,9 @@ class TouchTrigger(Button, QStateMachine):
         self.onState.entered.connect(lambda: blaster.trigggerStateChange(2))
         self.onState.exited.connect(lambda: blaster.trigggerStateChange(3))
         
-        self.offState.addTransition(self, self.touched, self.revState)
-        self.revState.addTransition(self, self.letGo, self.offState)
-        self.revState.addTransition(self, self.pressed, self.onState)
-        self.onState.addTransition(self, self.released, self.revState)
+        self.offState.addTransition(self.touched, self.revState)
+        self.revState.addTransition(self.letGo, self.offState)
+        self.revState.addTransition(self.pressed, self.onState)
+        self.onState.addTransition(self.released, self.revState)
         
         self.start()

@@ -85,23 +85,23 @@ class MetroMini(QObject):
             QSerialPort.readyRead
         
         Emits:
-            outputData
+           newDataAvailable
         """
         if self.lock.tryLock(5):
             bytesIn = self.serialPort.readAll()
             for b in bytesIn:
                 if b == 10: # This translates to the \n character which means the message is complete
                     msg = self.buffer.decode().strip()
-                    print("Received message:", msg)
+                    #TODO: print("Received message:", msg)
                     self.newDataAvailable.emit(float(msg))
-                    print("Requesting data from Metro Mini")
+                    #TODO: print("Requesting data from Metro Mini")
                     self.readyToWrite(self.reqMsg)
                     break
                 elif b != 13: # Ignore '\r' character too
                     self.buffer.append(b)
             self.lock.unlock()
-        else:
-            print("Failed to acquire lock...")   
+        # else:
+        #     #TODO: print("Failed to acquire lock...")   
     
     def writeData(self, msg):
         """SLOT: writeData
@@ -117,7 +117,7 @@ class MetroMini(QObject):
         self.lock.lock()
         self.serialPort.write(msg.encode())
         self.serialPort.waitForBytesWritten()
-        print("Message sent:", msg)
+        #TODO: print("Message sent:", msg)
         self.lock.unlock()
         
         

@@ -11,17 +11,16 @@ Indicator Numbers are as follows:
 5 - Laser
 """
 
-import sys, os, json, asyncio
-from qasync import QEventLoop
+import sys, os, json
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QThread
 from MainWindow import Ui_MainWindow
+from FHKSimulator import Simulator
 from blaster import FHK76
-from terminalSimulator import TerminalSimulator
 from metroMini import MetroMini
 from feedbackDisplay import FeedbackDisplay
 
-useSimulator = True
+simulator = Simulator() # set this to None if not using the simulator
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     """CLASS: MainWindow
@@ -37,8 +36,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     QThread.started           ()
     """
     
-    def __init__(self, *args, obj=None, **kwargs):
-        super(MainWindow, self).__init__(*args, **kwargs)
+    def __init__(self, *args, obj = None, **kwargs):
+        super('''MainWindow, self''').__init__(*args, **kwargs)
         self.setupUi(self)
         
         if os.path.exists("settings.json"): # load settings from file
@@ -51,12 +50,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.modeButtons.setId(self.semiButton, 0)
         self.modeButtons.setId(self.burstButton, 1)
         self.modeButtons.setId(self.autoButton, 2)
+        
+        self.blaster = FHK76(self.modeButtons, settings["fps"], simulator)
+        self.blaster.changeMode(self.modeButtons.checkedId())
+        self.updateBurstValue(settings["burst"])
+        
         self.modeButtons.idClicked.connect(self.blaster.changeMode)
         self.burstSlider.valueChanged.connect(self.updateBurstValue)
-        
-        self.blaster = FHK76(self.modeButtons, settings["fps"], useSimulator)
-        self.blaster.changeMode(self.modeButtons.checkedId())
-        self.updateBurstValue(settings[:"burst"])
         
         self.thread = QThread()
         self.uc = MetroMini()
@@ -95,10 +95,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """
         return self.blaster
     
-    def getModeButtons(self):
-        """METHOD: getModeButtons
+    def getSimConnects(self):
+        """METHOD: getPSIDisplay
                 
-        Returns the button group from the GUI
+        Returns the objects the simulator needs to connect to
                 
         Called by:
             __main__
@@ -107,9 +107,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             none
                 
         Returns:
-            QButtonGroup - The container for the three mode buttons on the GUI
+            MetroMini - The peripheral controller
+            FeedbackDisplay - The PSI display
         """
-        return self.modeButtons
+        return self.uc, self.psiDisplay
 
     def updateBurstValue(self, val):
         """SLOT: updateBurstValue
@@ -136,14 +137,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
    
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    eLoop = QEventLoop(app)
-    asyncio.set_event_loop(eLoop)
-    
-    with eLoop:
-        window = MainWindow()
-        window.show()
-        if useSimulator:
-            tSim = TerminalSimulator(window.getModeButtons())
-            window.getBlaster().connectSimulator(tSim)
-            asyncio.create_task(tSim.run())
-        eLoop.run_forever()
+    window = MainWindow()
+    window.show()
+    if simulator is not None:
+        simulator.show()
+        uc, disp = window.getSimConnects()
+        disp.messageReady.connect(simulator.getSerialOutput().setText)
+        uc.newDataAvailable.connect(simulator.getSerialInput().setText)
+        window.getBlaster().connectSimulator(simulator)

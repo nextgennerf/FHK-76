@@ -37,5 +37,5 @@ class Button(IOModule):
         (FHK76.safety) FHK76.releaseSafety, (FHK76.trigger) TouchTrigger state transition (onState -> revState)
     """
     
-    def __init__(self, sim):
-        super().__init__(sim)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

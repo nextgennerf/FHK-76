@@ -2,7 +2,6 @@ from enum import Enum
 from PyQt5.QtCore import QObject, QStateMachine, QState, QTimer, pyqtSignal
 
 _DELAY = 1000 # Represents the time delay in milliseconds between the last GUI button press and the display returning to normal
-#TODO: after rebuild, change main and metroMini accordingly
 
 class Color(Enum):
     """ENUM: Color
@@ -18,9 +17,9 @@ class DisplayState(QState):
     
     This subclass of QState has additional functions to control the LCD display.
     
-    SIGNALS                           SLOTS
-    ----------------    -------------------
-    done          ()    (float) updateValue
+    SIGNALS                             SLOTS
+    ----------------    ---------------------
+    done          ()    (float) updateDisplay
     newValue (float)
     """
     
@@ -84,7 +83,7 @@ class DisplayState(QState):
             float - The new value to display/store
                 
         Connects to:
-            TODO:
+            (FeedbackState.defaultState) MetroMini.newDataAvailable
         
         Emits:
             newValue
@@ -124,7 +123,7 @@ class FeedbackDisplay(QObject):
         float - The new target value
     
     Connects to:
-        TODO:
+        TODO: (probably necessary for FPS)
     """
     
     raiseTarget = pyqtSignal()

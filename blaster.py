@@ -52,13 +52,19 @@ class FHK76(QObject):
         self.safety.pressed.connect(self.setSafety)
         self.safety.released.connect(self.releaseSafety)
         
-        with ["semi", "burst", "auto"] as modes:
-            for m in modes:
-                i = modes.index[m]
-                l = LEDButton(sim, i)
-                self.modeButtons[m] = l
-                self.turnOn.connect(l.turnOn)
-                l.pressed.connect(mb.button(i).click)
+        modes = ["semi", "burst", "auto"]
+        self.modeButtons = {}
+        for m in modes:
+            i = modes.index(m)
+            if sim is not None:
+                l = LEDButton(i, simulator = sim)
+            self.modeButtons[m] = l
+            self.turnOn.connect(l.turnOn)
+            if m is "semi":
+                self.turnOn.emit(i)
+            else:
+                self.turnOff.emit(i)
+            l.pressed.connect(mb.button(i).click)
 
         self.mode = None
         self.fps = fps
@@ -66,20 +72,27 @@ class FHK76(QObject):
         self.belt = Motor(sim)
         self.flywheels = [ControlledMotor(sim), ControlledMotor(sim)]
         
-        self.safetyLED = Indicator(sim, False, ["red", "green"])
-        self.laser = Indicator(sim)
-        self.light = Indicator(sim)
+        self.safetyLED = Indicator(3)
+        self.laser = Indicator(4)
+        self.light = Indicator(5)
+        
         for ind in [self.safetyLED, self.laser, self.light]:
             self.turnOn.connect(ind.turnOn)
             self.turnOff.connect(ind.turnOff)
+        if sim is None:
+            pass
+        else:
+            self.setSafety()
+        self.turnOff.emit(4)
+        self.turnOff.emit(5)
         
-        if sim:
+        if sim is not None:
             self.nameSimulatedIO()
     
     def setSafety(self):
         """SLOT: setSafety
         
-        Turns the safety LED indicator red (off)
+        Turns the safety LED indicator green (blaster is safe)
         
         Expects:
             none
@@ -88,14 +101,14 @@ class FHK76(QObject):
             Button.pressed (FHK76.safety)
         
         Emits:
-            turnOff
+            turnOn
         """
-        self.turnOff.emit(3)
+        self.turnOn.emit(3)
     
     def releaseSafety(self):
         """SLOT: releaseSafety
         
-        Turns the safety LED indicator green (on)
+        Turns the safety LED indicator red (blaster is able to fire)
         
         Expects:
             none
@@ -104,9 +117,9 @@ class FHK76(QObject):
             Button.released (FHK76.safety)
         
         Emits:
-            turnOn
+            turnOff
         """
-        self.turnOn.emit(3)
+        self.turnOff.emit(3)
     
     def toggleLight(self, on):
         """SLOT: toggleLight
@@ -120,7 +133,7 @@ class FHK76(QObject):
             QPushButton.toggled (MainWindow.lightButton)
         
         Emits:
-            turnOff
+            turnOff, turnOn
         """
         self.turnOn.emit(4) if on else self.turnOff.emit(4)
     
@@ -136,7 +149,7 @@ class FHK76(QObject):
             QPushButton.toggled (MainWindow.lightButton)
         
         Emits:
-            turnOff
+            turnOff, turnOn
         """
         self.turnOn.emit(5) if on else self.turnOff.emit(5)
       
@@ -200,22 +213,6 @@ class FHK76(QObject):
         """
         self.burstValue = val
     
-    def setFPS(self, val):
-        """METHOD: setFPS
-                
-        Changes the blaster's target FPS
-                
-        Called by:
-            TODO: FHK76.setFPS callers
-                
-        Arguments:
-            float - The target velocity for every round fired
-                
-        Returns:
-            none
-        """
-        self.fps = val
-    
     def nameSimulatedIO(self):
         """METHOD: nameSimulatedIO
                 
@@ -251,17 +248,18 @@ class FHK76(QObject):
             __main__
                 
         Arguments:
-            TerminalSimulator - The terminal simulator to be connected
+            Simulator - The simulator window to be connected
                 
         Returns:
             none
         """
-        sim.semiButtonPressed.connect(self.modeButtons["semi"].pressed)
-        sim.burstButtonPressed.connect(self.modeButtons["burst"].pressed)
-        sim.autoButtonPressed.connect(self.modeButtons["auto"].pressed)
-        sim.safetyPressed.connect(self.safety.pressed)
-        sim.safetyReleased.connect(self.safety.released)
-        sim.triggerTouched.connect(self.trigger.touched)
-        sim.triggerPulled.connect(self.trigger.pressed)
-        sim.triggerRelaxed.connect(self.trigger.released)
-        sim.triggerReleased.connect(self.trigger.letGo)
+        for m in self.modeButtons.keys():
+            sim.getButton(m).pressed.connect(self.modeButtons.pressed)
+        sim.getButton("safety").pressed.connect(self.safety.pressed)
+        sim.getButton("safety").released.connect(self.safety.released)
+        sim.getButton("trigger").hover.connect(self.trigger.touched)
+        sim.getButton("trigger").pressed.connect(self.trigger.pressed)
+        sim.getButton("trigger").released.connect(self.trigger.released)
+        sim.getButton("trigger").moveAway.connect(self.trigger.letGo)
+        self.turnOn.connect(sim.indicatorOn)
+        self.turnOff.connect(sim.indicatorOff)
