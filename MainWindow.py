@@ -408,6 +408,12 @@ class Ui_MainWindow(object):
         self.led = QtWidgets.QWidget()
         self.led.setStyleSheet("")
         self.led.setObjectName("led")
+        self.blasterImage = QtWidgets.QLabel(self.led)
+        self.blasterImage.setGeometry(QtCore.QRect(0, 75, 800, 288))
+        self.blasterImage.setText("")
+        self.blasterImage.setPixmap(QtGui.QPixmap("blaster.png"))
+        self.blasterImage.setScaledContents(True)
+        self.blasterImage.setObjectName("blasterImage")
         self.tabWidget.addTab(self.led, "")
         self.data = QtWidgets.QWidget()
         self.data.setStyleSheet("")
@@ -437,3 +443,13 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.status), _translate("MainWindow", "status"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.led), _translate("MainWindow", "led settings"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.data), _translate("MainWindow", "data logs"))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())

@@ -21,8 +21,7 @@ class Button(IOModule):
         none
     
     Connects to:
-        (FHK76.safety) FHK76.setSafety, (FHK76.modeButtons[*]) QPushButton.click (MainWindow.modeButtons.button(*).click),
-        (FHK76.trigger) TouchTrigger state transition (offState -> revState)
+        (FHK76.safety) FHK76.setSafety, (FHK76.modeButtons[*]) QPushButton.click (MainWindow.modeButtons.button(*)), (FHK76.trigger) TouchTrigger state transition (offState -> revState)
     """
         
     released = pyqtSignal()
@@ -37,5 +36,5 @@ class Button(IOModule):
         (FHK76.safety) FHK76.releaseSafety, (FHK76.trigger) TouchTrigger state transition (onState -> revState)
     """
     
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

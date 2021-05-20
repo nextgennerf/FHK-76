@@ -1,9 +1,9 @@
-from Simulator import Ui_Form
+from Simulator import Ui_Simulator
 from things.state import State
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QLabel, QMainWindow
 from PyQt5.QtCore import pyqtSignal, QEvent
 
-class Simulator(QWidget, Ui_Form):
+class Simulator(QMainWindow, Ui_Simulator):
     """CLASS: Simulator
     
     This class wraps the simulation window that helps test the code when it's not on the blaster.
@@ -14,6 +14,20 @@ class Simulator(QWidget, Ui_Form):
     moveAway             ()    (int) indicatorOff
     QPushButton.pressed  ()    
     QPushButton.released ()
+    safetySet            ()
+    safetyReleased       ()
+    """
+    
+    displayMessage = pyqtSignal(str)
+    """SIGNAL: displayMessage
+            
+    An internal signal used to push a temporary message to the status bar
+            
+    Broadcasts:
+        str - The temporary message to display
+            
+    Connects to:
+        QStatusBar.showMessage
     """
     
     hover = pyqtSignal()
@@ -38,16 +52,43 @@ class Simulator(QWidget, Ui_Form):
             
     Connects to:
         TouchTrigger.letGo
-    """    
+    """
+    
+    safetySet = pyqtSignal()
+    """SIGNAL: safetySet
+            
+    This signal along with safetyReleased is used in lieu of the safety button's normal methods since the simulator uses clicks
+            
+    Broadcasts:
+        none
+            
+    Connects to:
+        Button.pressed (FHK76.safety)
+    """
+    
+    safetyReleased = pyqtSignal()
+    """SIGNAL: safetyReleased
+            
+    This signal along with safetySet is used in lieu of the safety button's normal methods since the simulator uses clicks
+            
+    Broadcasts:
+        none
+            
+    Connects to:
+        Button.released (FHK76.safety)
+    """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super(Simulator, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        self.buttons = {"semi":self.semiButton, "burst":self.burstButton, "auto":self.autoButton, "trigger":self.trigger, "safety":self.safety}
-        self.indicators = {"safety":self.safetyLED, "laser":self.laserIndicator, "light":self.lightIndicator}
+        self.status_bar.addWidget(QLabel("READY"))
+        self.displayMessage.connect(lambda msg: self.status_bar.showMessage(msg, 10000)) # Temporary messages show for 10 seconds
+        self.buttons = {"semi":self.semiButton, "burst":self.burstButton, "auto":self.autoButton, "trigger":self.trigger, "safety":self.safetyButton}
+        self.safetyButton.clicked.connect(self.emitSafetySignal)
+        self.indicators = {"safety":self.safetyIndicator, "laser":self.laserIndicator, "light":self.lightIndicator}
         self.trigger.installEventFilter(self)
     
-    def eventFilter(self, event, *args, **kwargs):
+    def eventFilter(self, object, event):
         """METHOD: eventFilter
                 
         Inherited method from QWidget for knowing when the mouse approaches and moves away from the trigger button
@@ -55,27 +96,13 @@ class Simulator(QWidget, Ui_Form):
         Emits:
             hover, moveAway
         """
-        if event.type() is QEvent.MouseMove:
+        if event.type() == QEvent.MouseMove:
             if self.trigger.underMouse():
                 self.hover.emit()
             else:
                 self.moveAway.emit()
-    
-    def printStatus(self, msg):
-        """METHOD: printStatus
-                
-        Outputs a message to the status bar on the simulator
-                
-        Called by:
-            indicatorOn, indicatorOff, IOModule.printStatus
-                
-        Arguments:
-            str - The message to be displayed
-                
-        Returns:
-            none
-        """
-        self.status.setText(msg)
+                self.displayMessage.emit("Mouse moved away from trigger button")
+        return False
             
     def getButton(self, name):
         """METHOD: getButton
@@ -96,6 +123,22 @@ class Simulator(QWidget, Ui_Form):
         else:
             self.status.setText("ERROR: Invalid button name passed to getButton()")
     
+    def emitSafetySignal(self, on):
+        """SLOT: emitSafetySignal
+                
+        Translates clicks of the simulator's safety button into the signals for setting and releasing the safety
+                
+        Expects:
+            bool - whether the button is checked or not
+                
+        Connects to:
+            Button.pressed (FHK76.safety), Button.released (FHK76.safety)
+        """
+        if on:
+            self.safetySet.emit()
+        else:
+            self.safetyReleased.emit()
+    
     def indicatorOn(self, num):
         """SLOT: indicatorOn
                 
@@ -107,20 +150,20 @@ class Simulator(QWidget, Ui_Form):
         Connects to:
             FHK76.turnOn
         """
-        if num is 0:
+        if num == 0:
             self.buttons["semi"].setStyleSheet("border: 5px solid #0000FF")
-        elif num is 1:
+        elif num == 1:
             self.buttons["burst"].setStyleSheet("border: 5px solid #0000FF")
-        elif num is 2:
+        elif num == 2:
             self.buttons["auto"].setStyleSheet("border: 5px solid #0000FF")
-        elif num is 3:
-            self.indicators["safety"].setText(State.ON)
-        elif num is 4:
-            self.indicators["light"].setText(State.ON)
-        elif num is 5:
-            self.indicators["laser"].setText(State.ON)
+        elif num == 3:
+            self.indicators["safety"].setText(State.ON.value)
+        elif num == 4:
+            self.indicators["light"].setText(State.ON.value)
+        elif num == 5:
+            self.indicators["laser"].setText(State.ON.value)
         else:
-            self.printStatus("ERROR: Invalid indicator number passed to indicatorOn()")
+            self.displayMessage.emit("ERROR: Invalid indicator number passed to indicatorOn()")
 
     def indicatorOff(self, num):
         """SLOT: indicatorOff
@@ -133,20 +176,20 @@ class Simulator(QWidget, Ui_Form):
         Connects to:
             FHK76.turnOff
         """
-        if num is 0:
+        if num == 0:
             self.buttons["semi"].setStyleSheet("")
-        if num is 1:
+        elif num == 1:
             self.buttons["burst"].setStyleSheet("")
-        if num is 2:
+        elif num == 2:
             self.buttons["auto"].setStyleSheet("")
-        elif num is 3:
-            self.indicators["safety"].setText(State.OFF)
-        elif num is 4:
-            self.indicators["light"].setText(State.OFF)
-        elif num is 5:
-            self.indicators["laser"].setText(State.OFF)
+        elif num == 3:
+            self.indicators["safety"].setText(State.OFF.value)
+        elif num == 4:
+            self.indicators["light"].setText(State.OFF.value)
+        elif num == 5:
+            self.indicators["laser"].setText(State.OFF.value)
         else:
-            self.printStatus("ERROR: Invalid indicator number passed to indicatorOff()")
+            self.displayMessage.emit("ERROR: Invalid indicator number passed to indicatorOff()")
     
     def getSerialOutput(self):
         """METHOD: getSerialOutput

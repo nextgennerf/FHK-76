@@ -168,13 +168,13 @@ class FeedbackDisplay(QObject):
         for s in [self.defaultState, self.upState, self.downState, self.waitState]:
             self.stateMachine.addState(s)
         self.stateMachine.setInitialState(self.defaultState)
-
+        
         for s in [self.defaultState, self.upState, self.downState, self.waitState]:
-                s.addTransition(self, self.raiseTarget, self.upState)
-                s.addTransition(self, self.lowerTarget, self.downState)
+                s.addTransition(self.raiseTarget, self.upState)
+                s.addTransition(self.lowerTarget, self.downState)
         for s in [self.upState, self.downState]:
-            s.addTransition(s, s.done, self.waitState)
-        self.waitState.addTransition(self.timer, self.timer.timeout(), self.defaultState)
+            s.addTransition(s.done, self.waitState)
+        self.waitState.addTransition(self.timer.timeout, self.defaultState)
         
         self.target = float(targetVal)
         if serial is not None:

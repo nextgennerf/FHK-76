@@ -1,4 +1,4 @@
-import glob, sys
+import glob
 from PyQt5.QtSerialPort import QSerialPort
 from PyQt5.QtCore import pyqtSignal, QIODevice, QObject, QMutex
 
@@ -9,11 +9,14 @@ class MetroMini(QObject):
     
     This class wraps the serial port used to communicate with the peripheral MetroMini processor.
     
-    SIGNALS                               SLOTS
-    ------------------------    ---------------
-    newDataAvailable (float)    ()        begin
-                                (str) writeData
+    SIGNALS                                 SLOTS
+    ------------------------    -----------------
+    displayRXMessage   (str)    (Simulator) begin
+    displayTXMessage   (str)    (str)   writeData
+    newDataAvailable (float)
+    printStatus        (str)
     """
+    # TODO: Gracefully handle serial connection errors
     
     readyToWrite = pyqtSignal(str)
     """SIGNAL: readyToWrite
@@ -39,13 +42,49 @@ class MetroMini(QObject):
         FeedbackDisplay.DisplayState.updateDisplay (MainWindow.psiDisplay.defaultState)
     """
     
+    printStatus = pyqtSignal(str)
+    """SIGNAL: printStatus
+            
+    Displays a temporary message on the simulator's status bar
+            
+    Broadcasts:
+        str - The temporary message to display
+            
+    Connects to:
+        QMainWindow.QStatusBar.showMessage (MainWindow.simulator)
+    """
+    
+    displayTXMessage = pyqtSignal(str)
+    """SIGNAL: displayTXMessage
+            
+    Displays a message sent over serial in the simulator window
+            
+    Broadcasts:
+        str - The message to display
+            
+    Connects to:
+        QLabel.showMessage (MainWindow.simulator.serialSentMsg)
+    """
+    
+    displayRXMessage = pyqtSignal(str)
+    """SIGNAL: displayRXMessage
+            
+    Displays a message received from serial in the simulator window
+            
+    Broadcasts:
+        str - The message to display
+            
+    Connects to:
+        QLabel.showMessage (MainWindow.simulator.serialRcvdMsg)
+    """
+    
     def begin(self):
         """SLOT: begin
                 
         Launches the serial read/write signal loop
                 
         Expects:
-            none
+            Simulator - The simulator window, or None if simulation is not being used
                 
         Connects to:
             QThread.started
@@ -58,11 +97,9 @@ class MetroMini(QObject):
             path = path[0]
         else:
             if len(path) == 0:
-                raise(RuntimeError, "No USB serial device connected")
-                sys.exit()
+                self.printStatus.emit("ERROR: No USB serial device connected")
             else:
-                raise(RuntimeError, "More than one USB serial device connected")
-                sys.exit()
+                self.printStatus.emit("ERROR: More than one USB serial device connected")
         self.serialPort = QSerialPort(path)
         self.serialPort.setBaudRate(9600)
         self.serialPort.open(QIODevice.ReadWrite)
@@ -71,7 +108,27 @@ class MetroMini(QObject):
         self.reqMsg = "request;"
         self.readyToWrite.connect(self.writeData)
         self.serialPort.readyRead.connect(self.readData)
-        self.readyToWrite.emit(self.reqMsg)
+        print(self.serialPort.children())
+        self.readyToWrite.emit("request;")
+    
+    def connectSimulator(self, sim):
+        """METHOD: connectSimulator
+                
+        Creates a connection between this object and the simulator window, if the program is running in simulation    `
+                
+        Called by:
+            MainWindow.__init__
+                
+        Arguments:
+            FHKSimulator: The simulator window
+                
+        Returns:
+            none
+        """
+        self.sim = sim
+        self.printStatus.connect(lambda msg: self.sim.statusBar().showMessage(msg, 10000))
+        self.displayTXMessage.connect(self.sim.serialSentMsg.setText)
+        self.displayRXMessage.connect(self.sim.serialRcvdMsg.setText)
     
     def readData(self):
         """SLOT: readData
@@ -92,10 +149,10 @@ class MetroMini(QObject):
             for b in bytesIn:
                 if b == 10: # This translates to the \n character which means the message is complete
                     msg = self.buffer.decode().strip()
-                    #TODO: print("Received message:", msg)
+                    self.displayRXMessage.emit(msg)
                     self.newDataAvailable.emit(float(msg))
-                    #TODO: print("Requesting data from Metro Mini")
-                    self.readyToWrite(self.reqMsg)
+                    self.printStatus.emit("Requesting data from Metro Mini")
+                    self.readyToWrite.emit(self.reqMsg)
                     break
                 elif b != 13: # Ignore '\r' character too
                     self.buffer.append(b)
@@ -112,12 +169,12 @@ class MetroMini(QObject):
             str - The message to be sent
                 
         Connects to:
-            FeedbackDisplay.messageReady (MainWindow.psiDisplay)
+            readytoWrite, FeedbackDisplay.messageReady (MainWindow.psiDisplay)
         """
         self.lock.lock()
         self.serialPort.write(msg.encode())
         self.serialPort.waitForBytesWritten()
-        #TODO: print("Message sent:", msg)
+        self.displayTXMessage.emit(msg)
         self.lock.unlock()
         
         

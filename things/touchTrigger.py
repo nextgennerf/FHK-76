@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal, QState, QStateMachine, QObject
+from PyQt5.QtCore import pyqtSignal, QState, QStateMachine
 from things.button import Button
 
 class TouchTrigger(QStateMachine, Button):
@@ -6,14 +6,39 @@ class TouchTrigger(QStateMachine, Button):
     
     This Button subclass adds the capacitive touch functionality of the main trigger using a state machine.
     
-    SIGNALS               SLOTS
-    ------------------    -----
-    Button.pressed  ()     none
-    Button.released ()
-    letGo           ()
-    QState.entered  ()
-    QState.exited   ()
-    touched         ()
+    SIGNALS              SLOTS
+    -----------------    -----
+    pressed        ()     none
+    released       ()
+    letGo          ()
+    QState.entered ()
+    QState.exited  ()
+    touched        ()
+    """
+    
+    pressed = pyqtSignal()
+    """SIGNAL: pressed (COPIED FROM BUTTON)
+    
+    Emitted when the button is pressed
+    
+    Broadcasts:
+        none
+    
+    Connects to:
+        (FHK76.safety) FHK76.setSafety, (FHK76.modeButtons[*]) QPushButton.click (MainWindow.modeButtons.button(*).click),
+        (FHK76.trigger) TouchTrigger state transition (offState -> revState)
+    """
+        
+    released = pyqtSignal()
+    """SIGNAL: released (COPIED FROM BUTTON)
+    
+    Emitted when the button is released
+    
+    Broadcasts:
+        none
+    
+    Connects to:
+        (FHK76.safety) FHK76.releaseSafety, (FHK76.trigger) TouchTrigger state transition (onState -> revState)
     """
     
     touched = pyqtSignal()
@@ -50,10 +75,10 @@ class TouchTrigger(QStateMachine, Button):
             self.addState(s)
         self.setInitialState(self.offState)
         
-        self.offState.entered.connect(lambda: blaster.trigggerStateChange(0))
-        self.offState.exited.connect(lambda: blaster.trigggerStateChange(1))
-        self.onState.entered.connect(lambda: blaster.trigggerStateChange(2))
-        self.onState.exited.connect(lambda: blaster.trigggerStateChange(3))
+        self.offState.entered.connect(lambda: blaster.triggerStateChange(3))
+        self.offState.exited.connect(lambda: blaster.triggerStateChange(0))
+        self.onState.entered.connect(lambda: blaster.triggerStateChange(1))
+        self.onState.exited.connect(lambda: blaster.triggerStateChange(2))
         
         self.offState.addTransition(self.touched, self.revState)
         self.revState.addTransition(self.letGo, self.offState)
@@ -61,3 +86,5 @@ class TouchTrigger(QStateMachine, Button):
         self.onState.addTransition(self.released, self.revState)
         
         self.start()
+    
+    self.setEnable
