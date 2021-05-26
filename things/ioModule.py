@@ -29,22 +29,4 @@ class IOModule(QObject):
             self.path = kwargs["path"]
         if "simulator" in kwargs:
             self.simulator = kwargs["simulator"]
-            self.printStatus.connect(lambda msg: self.simulator.statusBar().showMessage(msg, 10000))
-        self.name = None
-    
-    def setName(self, name):
-        """METHOD: setName
-        
-        Stores a name string to be displayed in the terminal when the system is being simulated
-        
-        Called by:
-            FHK76.nameSimulatedIO
-        
-        Arguments:
-            str - The displayed name of the input or output
-        
-        Returns:
-            none
-        """
-        if self.simulator is not None:
-            self.name = name
+            self.printStatus.connect(lambda msg: self.simulator.statusBar().showMessage(msg, 5000))

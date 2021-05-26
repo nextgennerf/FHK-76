@@ -1,6 +1,6 @@
 import glob
 from PyQt5.QtSerialPort import QSerialPort
-from PyQt5.QtCore import pyqtSignal, QIODevice, QObject, QMutex
+from PyQt5.QtCore import pyqtSignal, QIODevice, QObject, QMutex, QMutexLocker
 
 # _UPDATE_INTERVAL = 3
 
@@ -18,6 +18,7 @@ class MetroMini(QObject):
     """
     # TODO: Gracefully handle serial connection errors
     
+    # TODO: Eliminate this signal
     readyToWrite = pyqtSignal(str)
     """SIGNAL: readyToWrite
             
@@ -39,7 +40,7 @@ class MetroMini(QObject):
         float - The new value
             
     Connects to:
-        FeedbackDisplay.DisplayState.updateDisplay (MainWindow.psiDisplay.defaultState)
+        DisplayState.updateDisplay (MainWindow.psiDisplay.defaultState)
     """
     
     printStatus = pyqtSignal(str)
@@ -105,11 +106,8 @@ class MetroMini(QObject):
         self.serialPort.open(QIODevice.ReadWrite)
         self.lock = QMutex()
         self.buffer = bytearray()
-        self.reqMsg = "request;"
         self.readyToWrite.connect(self.writeData)
         self.serialPort.readyRead.connect(self.readData)
-        print(self.serialPort.children())
-        self.readyToWrite.emit("request;")
     
     def connectSimulator(self, sim):
         """METHOD: connectSimulator
@@ -126,7 +124,7 @@ class MetroMini(QObject):
             none
         """
         self.sim = sim
-        self.printStatus.connect(lambda msg: self.sim.statusBar().showMessage(msg, 10000))
+        self.printStatus.connect(lambda msg: self.sim.statusBar().showMessage(msg, 3000))
         self.displayTXMessage.connect(self.sim.serialSentMsg.setText)
         self.displayRXMessage.connect(self.sim.serialRcvdMsg.setText)
     
@@ -144,21 +142,20 @@ class MetroMini(QObject):
         Emits:
            newDataAvailable
         """
-        if self.lock.tryLock(5):
+        with QMutexLocker(self.lock):
+            self.printStatus.emit("Lock acquired for reading")
             bytesIn = self.serialPort.readAll()
             for b in bytesIn:
-                if b == 10: # This translates to the \n character which means the message is complete
+                if b == b'\n': # This translates to the \n character which means the message is complete
                     msg = self.buffer.decode().strip()
                     self.displayRXMessage.emit(msg)
-                    self.newDataAvailable.emit(float(msg))
+                    if msg != "ready":
+                        self.newDataAvailable.emit(float(msg))
+                    self.buffer = bytearray() # Clear buffer
                     self.printStatus.emit("Requesting data from Metro Mini")
-                    self.readyToWrite.emit(self.reqMsg)
-                    break
-                elif b != 13: # Ignore '\r' character too
-                    self.buffer.append(b)
-            self.lock.unlock()
-        # else:
-        #     #TODO: print("Failed to acquire lock...")   
+                    self.readyToWrite.emit("request;")
+                elif b != b'\r': # Ignore '\r' character too
+                    self.buffer = self.buffer + b
     
     def writeData(self, msg):
         """SLOT: writeData
@@ -171,10 +168,11 @@ class MetroMini(QObject):
         Connects to:
             readytoWrite, FeedbackDisplay.messageReady (MainWindow.psiDisplay)
         """
-        self.lock.lock()
-        self.serialPort.write(msg.encode())
-        self.serialPort.waitForBytesWritten()
-        self.displayTXMessage.emit(msg)
-        self.lock.unlock()
+        with QMutexLocker(self.lock):
+            self.printStatus.emit("Lock acquired for writing")
+            self.serialPort.write(msg.encode())
+            self.serialPort.waitForBytesWritten()
+            self.printStatus.emit("Serial write complete")
+            self.displayTXMessage.emit(msg)
         
         

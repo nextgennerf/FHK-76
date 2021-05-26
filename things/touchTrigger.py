@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSignal, QState, QStateMachine
+from PyQt5.QtCore import pyqtSignal, QState, QStateMachine, QSignalTransition
 from things.button import Button
 
 class TouchTrigger(QStateMachine, Button):
@@ -6,14 +6,15 @@ class TouchTrigger(QStateMachine, Button):
     
     This Button subclass adds the capacitive touch functionality of the main trigger using a state machine.
     
-    SIGNALS              SLOTS
-    -----------------    -----
-    pressed        ()     none
-    released       ()
-    letGo          ()
-    QState.entered ()
-    QState.exited  ()
-    touched        ()
+    SIGNALS                 SLOTS
+    --------------------    -----
+    letGo             ()     none
+    pressed           ()
+    printStatus    (str)
+    QState.entered    ()
+    QState.exited     ()
+    released          ()
+    touched           ()
     """
     
     pressed = pyqtSignal()
@@ -64,9 +65,21 @@ class TouchTrigger(QStateMachine, Button):
     Connects to:
         TouchTrigger state transition (revState -> offState)
     """
+    
+    printStatus = pyqtSignal(str)
+    """SIGNAL: printStatus (COPIED FROM IOMODULE)
+    
+    Displays a temporary message on the simulator's status bar
+    
+    Broadcasts:
+        str - The temporary message to display
+    
+    Connects to:
+        QMainWindow.QStatusBar.showMessage (MainWindow.simulator)
+    """
 
-    def __init__(self, sim, blaster):
-        super().__init__(sim)
+    def __init__(self, blaster, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.offState = QState()
         self.revState = QState()
         self.onState = QState()
@@ -80,11 +93,34 @@ class TouchTrigger(QStateMachine, Button):
         self.onState.entered.connect(lambda: blaster.triggerStateChange(1))
         self.onState.exited.connect(lambda: blaster.triggerStateChange(2))
         
-        self.offState.addTransition(self.touched, self.revState)
-        self.revState.addTransition(self.letGo, self.offState)
+        self.spinUp = QSignalTransition(self.touched)
+        self.spinUp.setTargetState(self.revState)
+        self.spinDown = QSignalTransition(self.letGo)
+        self.spinDown.setTargetState(self.offState)
         self.revState.addTransition(self.pressed, self.onState)
         self.onState.addTransition(self.released, self.revState)
         
         self.start()
     
-    self.setEnable
+    def enableTouch(self, en):
+        """METHOD: enableTouch
+                
+        Enables or disables response to touch
+                
+        Called by:
+            FHK76.setSafety, FHK76.releaseSafety
+                
+        Arguments:
+            bool - Whether touch response should be enabled
+                
+        Returns:
+            none
+        """
+        if en:
+            self.offState.addTransition(self.spinUp)
+            self.revState.addTransition(self.spinDown)
+        else:
+            if len(self.offState.transitions()) > 0: # No need to remove transitions before they've been added
+                self.offState.removeTransition(self.spinUp)
+            if len(self.revState.transitions()) > 1: # revState has two transitions whereas offState only has one
+                self.revState.removeTransition(self.spinDown)

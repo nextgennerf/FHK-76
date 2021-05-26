@@ -82,13 +82,14 @@ class Simulator(QMainWindow, Ui_Simulator):
         super(Simulator, self).__init__(*args, **kwargs)
         self.setupUi(self)
         self.status_bar.addWidget(QLabel("READY"))
-        self.displayMessage.connect(lambda msg: self.status_bar.showMessage(msg, 10000)) # Temporary messages show for 10 seconds
+        self.displayMessage.connect(lambda msg: self.status_bar.showMessage(msg, 5000)) # Temporary messages show for 5 seconds
         self.buttons = {"semi":self.semiButton, "burst":self.burstButton, "auto":self.autoButton, "trigger":self.trigger, "safety":self.safetyButton}
         self.safetyButton.clicked.connect(self.emitSafetySignal)
         self.indicators = {"safety":self.safetyIndicator, "laser":self.laserIndicator, "light":self.lightIndicator}
-        self.trigger.installEventFilter(self)
+        self.triggerTouched = False # Because mouse tracking happens in the main widget, you need to know whether movement outside the button matters
+        self.centralwidget.installEventFilter(self)
     
-    def eventFilter(self, object, event):
+    def eventFilter(self, obj, event):
         """METHOD: eventFilter
                 
         Inherited method from QWidget for knowing when the mouse approaches and moves away from the trigger button
@@ -98,10 +99,11 @@ class Simulator(QMainWindow, Ui_Simulator):
         """
         if event.type() == QEvent.MouseMove:
             if self.trigger.underMouse():
+                self.triggerTouched = True
                 self.hover.emit()
-            else:
+            elif self.triggerTouched is True:
+                self.triggerTouched = False
                 self.moveAway.emit()
-                self.displayMessage.emit("Mouse moved away from trigger button")
         return False
             
     def getButton(self, name):

@@ -11,8 +11,8 @@ class Indicator(IOModule):
                (int)  turnOn
     """
 
-    def __init__(self, num, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, num, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.num = num # all indicators receive turn on and turn off signals but only one can respond
             
     

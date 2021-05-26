@@ -44,13 +44,30 @@ class FHK76(QObject):
     """
     
     printStatus = pyqtSignal(str)
+    """SIGNAL: printStatus (COPIED FROM IOMODULE)
+            
+    Displays a temporary message on the simulator's status bar
+            
+    Broadcasts:
+        str - The temporary message to display
+            
+    Connects to:
+        QMainWindow.QStatusBar.showMessage (MainWindow.simulator)
+    """
     
     def __init__(self, mb, fps, sim):
         super().__init__()
         
-        self.trigger = TouchTrigger(sim, self)
-        
-        self.safety = Button(sim)
+        if sim is None:
+            pass
+        else:
+            self.trigger = TouchTrigger(self, simulator = sim)
+            self.safety = Button(simulator = sim)
+            self.safetyLED = Indicator(3, simulator = sim)
+            self.laser = Indicator(4, simulator = sim)
+            self.light = Indicator(5, simulator = sim)
+            self.printStatus.connect(lambda msg: sim.statusBar().showMessage(msg, 5000))
+            
         self.safety.pressed.connect(self.setSafety)
         self.safety.released.connect(self.releaseSafety)
         
@@ -58,10 +75,10 @@ class FHK76(QObject):
         self.modeButtons = {}
         for m in modes:
             i = modes.index(m)
-            if sim is not None:
-                l = LEDButton(i, simulator = sim)
-            else:
+            if sim is None:
                 l = LEDButton(i)
+            else:
+                l = LEDButton(i, simulator = sim)
             self.modeButtons[m] = l
             self.turnOn.connect(l.turnOn)
             self.turnOff.connect(l.turnOff)
@@ -73,10 +90,6 @@ class FHK76(QObject):
         # self.belt = Motor(sim)
         # self.flywheels = [ControlledMotor(sim), ControlledMotor(sim)]
         
-        self.safetyLED = Indicator(3, simulator = sim)
-        self.laser = Indicator(4, simulator = sim)
-        self.light = Indicator(5, simulator = sim)
-        
         for ind in [self.safetyLED, self.laser, self.light]:
             self.turnOn.connect(ind.turnOn)
             self.turnOff.connect(ind.turnOff)
@@ -86,10 +99,6 @@ class FHK76(QObject):
             self.setSafety()
         self.turnOff.emit(4)
         self.turnOff.emit(5)
-        
-        if sim is not None:
-            self.nameSimulatedIO()
-            self.printStatus.connect(lambda msg: sim.statusBar().showMessage(msg, 10000))
     
     def setSafety(self):
         """SLOT: setSafety
@@ -105,7 +114,7 @@ class FHK76(QObject):
         Emits:
             turnOn
         """
-        self.trigger.setEnable(False)
+        self.trigger.enableTouch(False)
         self.turnOn.emit(3)
     
     def releaseSafety(self):
@@ -122,7 +131,7 @@ class FHK76(QObject):
         Emits:
             turnOff
         """
-        self.trigger.setEnable(True)
+        self.trigger.enableTouch(True)
         self.turnOff.emit(3)
     
     def toggleLight(self, on):
@@ -215,32 +224,6 @@ class FHK76(QObject):
             none
         """
         self.burstValue = val
-    
-    def nameSimulatedIO(self):
-        """METHOD: nameSimulatedIO
-                
-        Passes display names to all of the blaster's I/O during simulation
-                
-        Called by:
-            FHK76.__init__
-                
-        Arguments:
-            none
-                
-        Returns:
-            none
-        """
-        self.trigger.setName("Trigger")
-        self.safety.setName("Safety")
-        self.modeButtons["semi"].setName("Semi-automatic fire button")
-        self.modeButtons["burst"].setName("Burst fire button")
-        self.modeButtons["auto"].setName("Automatic fire button")
-        # self.belt.setName("Belt motor")
-        # self.flywheels[0].setName("Top flywheel motor")
-        # self.flywheels[1].setName("Bottom flywheel motor")
-        self.safetyLED.setName("Safety LED")
-        self.light.setName("Flashlight")
-        self.laser.setName("Laser")
     
     def connectSimulator(self, sim):
         """METHOD: connectSimulator
