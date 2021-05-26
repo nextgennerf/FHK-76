@@ -152,8 +152,7 @@ class MetroMini(QObject):
                     if msg != "ready":
                         self.newDataAvailable.emit(float(msg))
                     self.buffer = bytearray() # Clear buffer
-                    self.printStatus.emit("Requesting data from Metro Mini")
-                    self.readyToWrite.emit("request;")
+                    self.readyToWrite.emit("request;") # TODO: writeData cannot be called from within readData because of the QMutex
                 elif b != b'\r': # Ignore '\r' character too
                     self.buffer = self.buffer + b
     

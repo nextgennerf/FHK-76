@@ -181,6 +181,8 @@ class FeedbackDisplay(QObject):
             self.serial = serial
             self.template = template
             self.waitState.exited.connect(self.composeMessage)
+            serial.newDataAvailable.connect(self.defaultState.updateDisplay)
+            self.messageReady.connect(serial.writeData)
     
     def getTarget(self):
         """METHOD: getTarget

@@ -16,6 +16,7 @@ class Ui_Simulator(object):
         Simulator.setObjectName("Simulator")
         Simulator.resize(640, 480)
         self.centralwidget = QtWidgets.QWidget(Simulator)
+        self.centralwidget.setMouseTracking(True)
         self.centralwidget.setObjectName("centralwidget")
         self.semiButton = QtWidgets.QPushButton(self.centralwidget)
         self.semiButton.setGeometry(QtCore.QRect(190, 20, 100, 100))

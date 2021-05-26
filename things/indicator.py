@@ -27,7 +27,7 @@ class Indicator(IOModule):
         Connects to:
             FHK76.turnOn
         """
-        #TODO
+        #TODO: File manipulation
     
     def turnOff(self, num):
         """SLOT: turnOff
@@ -40,4 +40,4 @@ class Indicator(IOModule):
         Connects to:
             FHK76.turnOff
         """
-        #TODO
+        #TODO: File manipulation
