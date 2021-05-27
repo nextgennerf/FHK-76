@@ -6,15 +6,15 @@ class TouchTrigger(QStateMachine, Button):
     
     This Button subclass adds the capacitive touch functionality of the main trigger using a state machine.
     
-    SIGNALS                 SLOTS
-    --------------------    -----
-    letGo             ()     none
-    pressed           ()
-    printStatus    (str)
-    QState.entered    ()
-    QState.exited     ()
-    released          ()
-    touched           ()
+    SIGNALS              SLOTS
+    -----------------    -----
+    letGo          ()     none
+    pressed        ()
+    printStatus (str)
+    QState.entered ()
+    QState.exited  ()
+    released       ()
+    touched        ()
     """
     
     pressed = pyqtSignal()

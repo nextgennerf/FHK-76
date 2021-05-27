@@ -18,19 +18,6 @@ class MetroMini(QObject):
     """
     # TODO: Gracefully handle serial connection errors
     
-    # TODO: Eliminate this signal
-    readyToWrite = pyqtSignal(str)
-    """SIGNAL: readyToWrite
-            
-    Emitted internally when a message can be sent as soon as the serial port is available
-            
-    Broadcasts:
-        str - The message to be sent
-            
-    Connects to:
-        MetroMini.writeData
-    """
-    
     newDataAvailable = pyqtSignal(float)
     """SIGNAL: newDataAvailable
             
@@ -89,25 +76,15 @@ class MetroMini(QObject):
                 
         Connects to:
             QThread.started
-        
-        Emits:
-            readyToWrite
         """
         path = glob.glob("/dev/tty.usbserial-*")
-        if len(path) == 1:
-            path = path[0]
-        else:
-            if len(path) == 0:
-                self.printStatus.emit("ERROR: No USB serial device connected")
-            else:
-                self.printStatus.emit("ERROR: More than one USB serial device connected")
+        path = path[0]
         self.serialPort = QSerialPort(path)
         self.serialPort.setBaudRate(9600)
-        self.serialPort.open(QIODevice.ReadWrite)
         self.lock = QMutex()
         self.buffer = bytearray()
-        self.readyToWrite.connect(self.writeData)
         self.serialPort.readyRead.connect(self.readData)
+        self.serialPort.open(QIODevice.ReadWrite)
     
     def connectSimulator(self, sim):
         """METHOD: connectSimulator
@@ -152,7 +129,6 @@ class MetroMini(QObject):
                     if msg != "ready":
                         self.newDataAvailable.emit(float(msg))
                     self.buffer = bytearray() # Clear buffer
-                    self.readyToWrite.emit("request;") # TODO: writeData cannot be called from within readData because of the QMutex
                 elif b != b'\r': # Ignore '\r' character too
                     self.buffer = self.buffer + b
     
@@ -165,7 +141,7 @@ class MetroMini(QObject):
             str - The message to be sent
                 
         Connects to:
-            readytoWrite, FeedbackDisplay.messageReady (MainWindow.psiDisplay)
+            FeedbackDisplay.messageReady (MainWindow.psiDisplay)
         """
         with QMutexLocker(self.lock):
             self.printStatus.emit("Lock acquired for writing")

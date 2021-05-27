@@ -76,8 +76,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.modeButtons.idClicked.connect(self.blaster.changeMode)
         self.burstSlider.valueChanged.connect(self.updateBurstValue)
-            
-        self.psiDisplay.messageReady.connect(self.uc.writeData)
+        
         self.uc.newDataAvailable.connect(self.psiDisplay.getDefaultState().updateDisplay)
         self.thread.start()
         

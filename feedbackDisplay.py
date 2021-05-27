@@ -1,7 +1,8 @@
 from enum import Enum
 from PyQt5.QtCore import QObject, QStateMachine, QState, QTimer, pyqtSignal
 
-_DELAY = 1000 # Represents the time delay in milliseconds between the last GUI button press and the display returning to normal
+DELAY_BEFORE_SET = 1000 # Represents the time delay in milliseconds between the last GUI button press and the display returning to normal
+REFRESH_PERIOD = 500 # Represents the amount of time in milliseconds between sending data requests to the Metro Mini
 
 class Color(Enum):
     """ENUM: Color
@@ -83,7 +84,7 @@ class DisplayState(QState):
             float - The new value to display/store
                 
         Connects to:
-            (FeedbackState.defaultState) MetroMini.newDataAvailable
+            (FeedbackState.defaultState) MetroMini.newDataAvailable [Connected by MainWindow]
         
         Emits:
             newValue
@@ -96,22 +97,9 @@ class FeedbackDisplay(QObject):
     
     This class wraps a QStateMachine and a QLCDNumber in the GUI so it can keep track of a target value and prevent competing display changes.
     
-    SIGNALS                                   SLOTS
-    ---------------------    ----------------------
-    messageReady    (str)    (float)   changeTarget
-    targetChanged (float)    (float) composeMessage
-    """
-    
-    messageReady = pyqtSignal(str)
-    """SIGNAL: messageReady
-    
-    Emitted when a message is ready to be sent over serial
-    
-    Broadcasts:
-        str - A message to be delivered to the peripheral controller
-    
-    Connects to:
-        MetroMini.writeData
+    SIGNALS                                 SLOTS
+    ---------------------    --------------------
+    targetChanged (float)    (float) changeTarget
     """
     
     targetChanged = pyqtSignal(float)
@@ -159,30 +147,36 @@ class FeedbackDisplay(QObject):
         self.downState = DisplayState(lcd, Color.RED)
         self.waitState = QState()
         
-        self.timer = QTimer()
-        self.timer.setInterval(_DELAY)
-        self.timer.setSingleShot(True)
-        self.waitState.entered.connect(self.timer.start)
-        self.waitState.exited.connect(self.timer.stop)
+        self.setTimer = QTimer()
+        self.setTimer.setInterval(DELAY_BEFORE_SET)
+        self.setTimer.setSingleShot(True)
+        self.waitState.entered.connect(self.setTimer.start)
+        self.waitState.exited.connect(self.setTimer.stop)
         
         for s in [self.defaultState, self.upState, self.downState, self.waitState]:
             self.stateMachine.addState(s)
-        self.stateMachine.setInitialState(self.defaultState)
-        
-        for s in [self.defaultState, self.upState, self.downState, self.waitState]:
-                s.addTransition(self.raiseTarget, self.upState)
-                s.addTransition(self.lowerTarget, self.downState)
+            s.addTransition(self.raiseTarget, self.upState)
+            s.addTransition(self.lowerTarget, self.downState)
         for s in [self.upState, self.downState]:
             s.addTransition(s.done, self.waitState)
-        self.waitState.addTransition(self.timer.timeout, self.defaultState)
+        self.waitState.addTransition(self.setTimer.timeout, self.defaultState)
+        
+        self.stateMachine.setInitialState(self.defaultState)
         
         self.target = float(targetVal)
+        
         if serial is not None:
-            self.serial = serial
             self.template = template
-            self.waitState.exited.connect(self.composeMessage)
+            
             serial.newDataAvailable.connect(self.defaultState.updateDisplay)
-            self.messageReady.connect(serial.writeData)
+            
+            self.waitState.exited.connect(lambda x = self.template.format(self.target): serial.writeData(x))
+            
+            self.requestTimer = QTimer()
+            self.requestTimer.setInterval(REFRESH_PERIOD)
+            self.requestTimer.timeout.connect(lambda x = "request;": serial.writeData(x))
+            self.defaultState.entered.connect(self.requestTimer.start)
+            self.defaultState.exited.connect(self.requestTimer.stop)
     
     def getTarget(self):
         """METHOD: getTarget
@@ -199,22 +193,6 @@ class FeedbackDisplay(QObject):
             float - The current target value
         """
         return self.target
-    
-    def getDefaultState(self):
-        """METHOD: getDefaultState
-                
-        Access method for the default state, the only one that allows external setting of the displayed value
-                
-        Called by:
-            MainWindow.__init__
-                
-        Arguments:
-            none
-                
-        Returns:
-            DisplayState - The state machine's default state
-        """
-        return self.defaultState
         
     def changeTarget(self, delta):
         """SLOT: changeTarget
@@ -236,19 +214,3 @@ class FeedbackDisplay(QObject):
         elif delta < 0:
             self.lowerTarget.emit()
         self.targetChanged.emit(self.target)
-    
-    def composeMessage(self):
-        """SLOT: composeMessage
-                
-        If this display communicates with serial, this is triggered by the end of the wait state to compose the message to be sent.
-                
-        Expects:
-            none
-                
-        Connects to:
-            (waitState) QState.exited
-        
-        Emits:
-            messageReady
-        """
-        self.messageReady.emit(self.template.format(self.target))
