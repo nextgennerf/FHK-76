@@ -101,7 +101,7 @@ class MetroMini(QObject):
             none
         """
         self.sim = sim
-        self.printStatus.connect(lambda msg: self.sim.statusBar().showMessage(msg, 3000))
+        self.printStatus.connect(lambda msg: self.sim.statusBar().showMessage(msg, 5000))
         self.displayTXMessage.connect(self.sim.serialSentMsg.setText)
         self.displayRXMessage.connect(self.sim.serialRcvdMsg.setText)
     
@@ -120,7 +120,6 @@ class MetroMini(QObject):
            newDataAvailable
         """
         with QMutexLocker(self.lock):
-            self.printStatus.emit("Lock acquired for reading")
             bytesIn = self.serialPort.readAll()
             for b in bytesIn:
                 if b == b'\n': # This translates to the \n character which means the message is complete
@@ -128,6 +127,7 @@ class MetroMini(QObject):
                     self.displayRXMessage.emit(msg)
                     if msg != "ready":
                         self.newDataAvailable.emit(float(msg))
+                    self.printStatus.emit("Serial read complete")
                     self.buffer = bytearray() # Clear buffer
                 elif b != b'\r': # Ignore '\r' character too
                     self.buffer = self.buffer + b
@@ -144,7 +144,6 @@ class MetroMini(QObject):
             FeedbackDisplay.messageReady (MainWindow.psiDisplay)
         """
         with QMutexLocker(self.lock):
-            self.printStatus.emit("Lock acquired for writing")
             self.serialPort.write(msg.encode())
             self.serialPort.waitForBytesWritten()
             self.printStatus.emit("Serial write complete")

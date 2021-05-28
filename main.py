@@ -59,17 +59,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.simulator = None
         if useSimulator:
             self.simulator = Simulator()
-            self.simulator.show()
+            self.blaster = FHK76(self.modeButtons, settings["fps"], self.simulator)
             self.uc.connectSimulator(self.simulator)
-        self.blaster = FHK76(self.modeButtons, settings["fps"], self.simulator)
+            self.blaster.connectSimulator(self.simulator)
+            self.simulator.show()
+        else:
+            self.blaster = FHK76(self.modeButtons, settings["fps"])
         
         self.fpsDisplay = FeedbackDisplay(self.fpsLCD, settings["fps"])
         self.psiDisplay = FeedbackDisplay(self.psiLCD, settings["psi"], self.uc, "set {0};")
-        
-        if useSimulator:
-            self.psiDisplay.messageReady.connect(self.simulator.getSerialOutput().setText)
-            self.uc.newDataAvailable.connect(self.simulator.getSerialInput().setText)
-            self.blaster.connectSimulator(self.simulator)
         
         self.blaster.changeMode(self.modeButtons.checkedId())
         self.updateBurstValue(settings["burst"])
@@ -77,7 +75,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modeButtons.idClicked.connect(self.blaster.changeMode)
         self.burstSlider.valueChanged.connect(self.updateBurstValue)
         
-        self.uc.newDataAvailable.connect(self.psiDisplay.getDefaultState().updateDisplay)
         self.thread.start()
         
         #FUTURE: Allow for finer control of target values

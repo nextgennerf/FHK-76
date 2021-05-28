@@ -55,7 +55,7 @@ class FHK76(QObject):
         QMainWindow.QStatusBar.showMessage (MainWindow.simulator)
     """
     
-    def __init__(self, mb, fps, sim):
+    def __init__(self, mb, fps, sim = None):
         super().__init__()
         
         if sim is None:
@@ -191,7 +191,7 @@ class FHK76(QObject):
         #     self.belt.turnOff()
         #     for f in self.flywheels:
         #         f.sleep()
-        self.printStatus.emit(str(val))
+        pass
     
     def changeMode(self, modeID):
         """SLOT: changeMode
