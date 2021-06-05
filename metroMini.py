@@ -15,6 +15,7 @@ class MetroMini(QObject):
     displayTXMessage   (str)    (str)   writeData
     newDataAvailable (float)
     printStatus        (str)
+    ready                 ()
     """
     # TODO: Gracefully handle serial connection errors
     
@@ -66,6 +67,30 @@ class MetroMini(QObject):
         QLabel.showMessage (MainWindow.simulator.serialRcvdMsg)
     """
     
+    broadcast = pyqtSignal(str)
+    """SIGNAL: broadcast
+            
+    This signal is called when a message needs to be written to serial. It exists to ensure that the write signal is emitted in the correct thread.
+            
+    Broadcasts:
+        str - The message to be sent
+            
+    Connects to:
+        QState.exited (MainWindow.psiDisplay.waitState), (MainWindow.psiDisplay.requestTimer) QTimer.timeout, writeData
+    """
+    
+    ready = pyqtSignal()
+    """SIGNAL: ready
+            
+    Announces that the MetroMini is ready for data exchange
+            
+    Broadcasts:
+        none
+            
+    Connects to:
+        FeedbackDisplay.sendTarget (MainWindow.psiDisplay)
+    """
+    
     def begin(self):
         """SLOT: begin
                 
@@ -84,6 +109,7 @@ class MetroMini(QObject):
         self.lock = QMutex()
         self.buffer = bytearray()
         self.serialPort.readyRead.connect(self.readData)
+        self.broadcast.connect(self.writeData)
         self.serialPort.open(QIODevice.ReadWrite)
     
     def connectSimulator(self, sim):
@@ -125,7 +151,9 @@ class MetroMini(QObject):
                 if b == b'\n': # This translates to the \n character which means the message is complete
                     msg = self.buffer.decode().strip()
                     self.displayRXMessage.emit(msg)
-                    if msg != "ready":
+                    if msg == "ready":
+                        self.ready.emit()
+                    else:
                         self.newDataAvailable.emit(float(msg))
                     self.printStatus.emit("Serial read complete")
                     self.buffer = bytearray() # Clear buffer
