@@ -92,7 +92,7 @@ QTabBar::tab:!selected {
 }x</string>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="status">
      <property name="styleSheet">
@@ -367,7 +367,7 @@ color: #000000</string>
        <bool>true</bool>
       </property>
       <property name="digitCount">
-       <number>61</number>
+       <number>5</number>
       </property>
       <property name="segmentStyle">
        <enum>QLCDNumber::Flat</enum>
@@ -481,10 +481,10 @@ color: #000000</string>
        <enum>QLCDNumber::Flat</enum>
       </property>
       <property name="value" stdset="0">
-       <double>45.000000000000000</double>
+       <double>0.000000000000000</double>
       </property>
       <property name="intValue" stdset="0">
-       <number>45</number>
+       <number>0</number>
       </property>
      </widget>
      <widget class="QLabel" name="FPS">
@@ -570,10 +570,10 @@ color: #000000</string>
        <enum>QLCDNumber::Flat</enum>
       </property>
       <property name="value" stdset="0">
-       <double>101.000000000000000</double>
+       <double>0.000000000000000</double>
       </property>
       <property name="intValue" stdset="0">
-       <number>101</number>
+       <number>0</number>
       </property>
      </widget>
      <widget class="QLabel" name="ROCKETPRESSURE">
