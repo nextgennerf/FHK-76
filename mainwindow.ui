@@ -815,7 +815,7 @@ QToolBox::tab:selected {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <property name="tabSpacing">
        <number>-1</number>
@@ -1159,7 +1159,7 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
                 <bool>false</bool>
                </property>
                <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
+                <string notr="true">rightButtons</string>
                </attribute>
               </widget>
              </item>
@@ -1197,7 +1197,7 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
                 <bool>false</bool>
                </property>
                <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
+                <string notr="true">rightButtons</string>
                </attribute>
               </widget>
              </item>
@@ -1235,7 +1235,7 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
                 <bool>true</bool>
                </property>
                <attribute name="buttonGroup">
-                <string notr="true">buttonGroup</string>
+                <string notr="true">rightButtons</string>
                </attribute>
               </widget>
              </item>
@@ -1498,6 +1498,9 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
                <property name="checked">
                 <bool>false</bool>
                </property>
+               <attribute name="buttonGroup">
+                <string notr="true">leftButtons</string>
+               </attribute>
               </widget>
              </item>
              <item>
@@ -1533,6 +1536,9 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
                <property name="checked">
                 <bool>false</bool>
                </property>
+               <attribute name="buttonGroup">
+                <string notr="true">leftButtons</string>
+               </attribute>
               </widget>
              </item>
              <item>
@@ -1568,6 +1574,9 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
                <property name="checked">
                 <bool>true</bool>
                </property>
+               <attribute name="buttonGroup">
+                <string notr="true">leftButtons</string>
+               </attribute>
               </widget>
              </item>
             </layout>
@@ -2164,6 +2173,18 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgb
              <property name="enabled">
               <bool>false</bool>
              </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>200</width>
+               <height>0</height>
+              </size>
+             </property>
              <property name="font">
               <font>
                <family>Droid</family>
@@ -2225,15 +2246,36 @@ QCheckBox::indicator:checked {image: url(checkmark.png);}</string>
          </property>
          <item row="0" column="0">
           <layout class="QHBoxLayout" name="horizontalLayout">
+           <property name="spacing">
+            <number>10</number>
+           </property>
            <item>
             <spacer name="horizontalSpacer_4">
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
             </spacer>
            </item>
            <item>
             <widget class="QCheckBox" name="rotateCheckBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>250</width>
+               <height>0</height>
+              </size>
+             </property>
              <property name="font">
               <font>
                <family>Droid</family>
@@ -2257,8 +2299,8 @@ QCheckBox::indicator:checked {image: url(checkmark.png);}</string>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
-               <width>0</width>
-               <height>0</height>
+               <width>40</width>
+               <height>20</height>
               </size>
              </property>
             </spacer>
@@ -2338,6 +2380,9 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
              <property name="text">
               <string>static</string>
              </property>
+             <attribute name="buttonGroup">
+              <string notr="true">frontButtons</string>
+             </attribute>
             </widget>
            </item>
            <item>
@@ -2358,6 +2403,9 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
              <property name="text">
               <string>breathe</string>
              </property>
+             <attribute name="buttonGroup">
+              <string notr="true">frontButtons</string>
+             </attribute>
             </widget>
            </item>
            <item>
@@ -2381,6 +2429,9 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
              <property name="checked">
               <bool>true</bool>
              </property>
+             <attribute name="buttonGroup">
+              <string notr="true">frontButtons</string>
+             </attribute>
             </widget>
            </item>
           </layout>
@@ -2866,6 +2917,8 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
  </connections>
  <buttongroups>
   <buttongroup name="modeButtons"/>
-  <buttongroup name="buttonGroup"/>
+  <buttongroup name="rightButtons"/>
+  <buttongroup name="leftButtons"/>
+  <buttongroup name="frontButtons"/>
  </buttongroups>
 </ui>

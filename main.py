@@ -60,9 +60,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modeButtons.setId(self.semiButton, 0)
         self.modeButtons.setId(self.burstButton, 1)
         self.modeButtons.setId(self.autoButton, 2)
+        self.leftButtons.setId(self.leftStaticButton, 0)
+        self.leftButtons.setId(self.leftBreatheButton, 1)
+        self.leftButtons.setId(self.leftCycleButton, 2)
+        self.rightButtons.setId(self.leftStaticButton, 0)
+        self.rightButtons.setId(self.leftBreatheButton, 1)
+        self.frontButtons.setId(self.leftCycleButton, 2)
+        self.frontButtons.setId(self.leftStaticButton, 0)
+        self.frontButtons.setId(self.leftBreatheButton, 1)
+        self.frontButtons.setId(self.leftCycleButton, 2)
         
-        #TODO: Add static and breathe modes
-        #FUTURE: Allow for individual ring LEDs to cycle (may require GUI change)
+        #TODO: Add slot for sending animation signals to the MetroMini
         
         self.ringColors = ["rgb(0,0,0)"] * len(Pixel.FRONT.value)
         self.selectorDial.valueChanged.connect(self.changeFrontSliders)
