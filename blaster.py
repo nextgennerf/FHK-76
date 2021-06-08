@@ -11,12 +11,14 @@ class FHK76(QObject):
     
     This class represents the FHK76 as whole, creating the I/O object and facilitating communication between them and the GUI as necessary
     
-    SIGNALS                       SLOTS
-    -------------    ------------------
-    turnOff (int)    ()   releaseSafety
-    turnOn  (int)    ()       setSafety
-                     (bool) toggleLaser
-                     (bool) toggleLight
+    SIGNALS                                 SLOTS
+    -----------------    ------------------------
+    printStatus (str)    (int)         changeMode
+    turnOff     (int)    ()         releaseSafety
+    turnOn      (int)    ()             setSafety
+                         (bool)       toggleLaser
+                         (bool)       toggleLight
+                         (int) triggerStateChange
     """
     
     turnOn = pyqtSignal(int)

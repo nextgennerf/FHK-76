@@ -11,7 +11,8 @@ class MetroMini(QObject):
     
     SIGNALS                                 SLOTS
     ------------------------    -----------------
-    displayRXMessage   (str)    (Simulator) begin
+    broadcast          (str)    (Simulator) begin
+    displayRXMessage   (str)    ()       readData
     displayTXMessage   (str)    (str)   writeData
     newDataAvailable (float)
     printStatus        (str)
@@ -88,7 +89,7 @@ class MetroMini(QObject):
         none
             
     Connects to:
-        FeedbackDisplay.sendTarget (MainWindow.psiDisplay)
+        MainWindow.initializeSerialObjects
     """
     
     def begin(self):
@@ -103,14 +104,18 @@ class MetroMini(QObject):
             QThread.started
         """
         path = glob.glob("/dev/tty.usbserial-*")
-        path = path[0]
-        self.serialPort = QSerialPort(path)
-        self.serialPort.setBaudRate(9600)
-        self.lock = QMutex()
-        self.buffer = bytearray()
-        self.serialPort.readyRead.connect(self.readData)
-        self.broadcast.connect(self.writeData)
-        self.serialPort.open(QIODevice.ReadWrite)
+        try:
+            path = path[0]
+        except IndexError:
+            print("Serial device not connected!")
+        finally:
+            self.serialPort = QSerialPort(path)
+            self.serialPort.setBaudRate(9600)
+            self.lock = QMutex()
+            self.buffer = bytearray()
+            self.serialPort.readyRead.connect(self.readData)
+            self.broadcast.connect(self.writeData)
+            self.serialPort.open(QIODevice.ReadWrite)
     
     def connectSimulator(self, sim):
         """METHOD: connectSimulator

@@ -101,8 +101,10 @@ class FeedbackDisplay(QStateMachine):
     
     SIGNALS                                 SLOTS
     ---------------------    --------------------
-    sendToSerial    (str)    (float) changeTarget
-    targetChanged (float)    ()        sendTarget
+    lowerTarget        ()    (float) changeTarget
+    raiseTarget        ()    ()       sendRequest
+    sendToSerial    (str)    ()        sendTarget
+    targetChanged (float)
     """
     
     targetChanged = pyqtSignal(float)
@@ -186,7 +188,6 @@ class FeedbackDisplay(QStateMachine):
             serial.newDataAvailable.connect(self.defaultState.updateDisplay)
             
             self.waitState.exited.connect(self.sendTarget)
-            serial.ready.connect(self.sendTarget)
             self.sendToSerial.connect(serial.broadcast)
             
             self.requestTimer = QTimer()
@@ -259,7 +260,10 @@ class FeedbackDisplay(QStateMachine):
             none
                 
         Connects to:
-            (MainWindow.psiDisplay) QState.exited (waitState), MetroMini.ready
+            (MainWindow.psiDisplay) QState.exited (waitState)
+        
+        Called by:
+            MainWindow.initializeSerialObjects
         
         Emits:
             sendToSerial

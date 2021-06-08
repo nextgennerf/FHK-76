@@ -11,8 +11,6 @@ class TouchTrigger(QStateMachine, Button):
     letGo          ()     none
     pressed        ()
     printStatus (str)
-    QState.entered ()
-    QState.exited  ()
     released       ()
     touched        ()
     """

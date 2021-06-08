@@ -8,10 +8,11 @@ class Simulator(QMainWindow, Ui_Simulator):
     
     This class wraps the simulation window that helps test the code when it's not on the blaster.
     
-    SIGNALS                                 SLOTS
-    -----------------------    ------------------
-    hover                ()    (int)  indicatorOn
-    moveAway             ()    (int) indicatorOff
+    SIGNALS                                      SLOTS
+    -----------------------    -----------------------
+    displayMessage    (str)    (bool) emitSafetySignal
+    hover                ()    (int)       indicatorOn
+    moveAway             ()    (int)      indicatorOff
     QPushButton.pressed  ()    
     QPushButton.released ()
     safetySet            ()
