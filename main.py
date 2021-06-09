@@ -19,7 +19,7 @@ from FHKSimulator import Simulator
 from blaster import FHK76
 from metroMini import MetroMini
 from feedbackDisplay import FeedbackDisplay
-from pixelTools import PixelTool
+from pixelTools import PixelTool, RingTool
 
 useSimulator = True
 
@@ -77,14 +77,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modeButtons.setId(self.burstButton, 1)
         self.modeButtons.setId(self.autoButton, 2)
         
-        # self.ringColors = ["rgb(0,0,0)"] * len(Pixel.FRONT.value)
-        # self.selectorDial.valueChanged.connect(self.changeFrontSliders)
-        # self.applyAllState = self.applyAllCheckBox.isChecked()
-
-        # self.applyAllCheckBox.toggled.connect(lambda en: self.changeColor(Pixel.FRONT))
-        
         # self.rotateCheckBox.toggled.connect(self.enableButtons)
-
+        
+        #FUTURE: Allow for blaster to function without MetroMini-connected features
         self.thread = QThread()
         self.uc = MetroMini()
         self.uc.moveToThread(self.thread)
@@ -94,6 +89,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.leftTool = PixelTool(self.leftSide, self.leftButtons, self.uc, 24)
         self.rightTool = PixelTool(self.rightSide, self.rightButtons, self.uc, 25)
+        self.frontTool = RingTool(self.frontColors, self.frontButtons, self.uc, 0, 24)
         
         self.simulator = None
         if useSimulator:
@@ -154,27 +150,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         self.burstButton.setText("BuRst: " + str(val))
         self.blaster.setBurstValue(val)
-    #
-    # def changeFrontSliders(self, num):
-    #     """SLOT: changeFrontSliders
-    #
-    #     Changes which front LED's color data is displayed
-    #
-    #     Expects:
-    #         int - The number of the active LED
-    #
-    #     Connects to:
-    #         QDial.valueChanged (selectorDial)
-    #     """
-    #     if num == 24:
-    #         self.selectorDial.setValue(0)
-    #     else:
-    #         rgb = self.ringColors[num].split(",")
-    #         r,g,b = int(rgb[0].strip("rgb(")),int(rgb[1]),int(rgb[2].strip(")"))
-    #         self.frontRedSlider.setValue(r)
-    #         self.frontGreenSlider.setValue(g)
-    #         self.frontBlueSlider.setValue(b)
-    #         self.updateSquare(self.frontColor, self.ringColors[num])
     #
     # def enableButtons(self, en):
     #     """SLOT: enableButtons
