@@ -37,18 +37,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                           (int)     updateBurstValue
     """
     
-    # initializeCompressor = pyqtSignal()
-    # """SIGNAL: initializeCompressor
-    #
-    # Signals the pressure-monitoring system to send the first pressurize command to the MetroMini
-    #
-    # Broadcasts:
-    #     none
-    #
-    # Connects to:
-    #     FeedbackDisplay.sendTarget (psiDisplay)
-    # """
-    
     sendToSerial = pyqtSignal(str)
     """SIGNAL: sendToSerial
             
@@ -77,8 +65,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modeButtons.setId(self.burstButton, 1)
         self.modeButtons.setId(self.autoButton, 2)
         
-        # self.rotateCheckBox.toggled.connect(self.enableButtons)
-        
         #FUTURE: Allow for blaster to function without MetroMini-connected features
         self.thread = QThread()
         self.uc = MetroMini()
@@ -89,7 +75,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.leftTool = PixelTool(self.leftSide, self.leftButtons, self.uc, 24)
         self.rightTool = PixelTool(self.rightSide, self.rightButtons, self.uc, 25)
-        self.frontTool = RingTool(self.frontColors, self.frontButtons, self.uc, 0, 24)
+        self.frontTool = RingTool(self.frontColors, self.frontAnimation, self.frontButtons, self.uc, 0, 24)
         
         self.simulator = None
         if useSimulator:
@@ -134,7 +120,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         self.leftTool.initialize()
         self.rightTool.initialize()
-        #self.frontTool.initialize()
+        self.frontTool.initialize()
         self.psiDisplay.sendTarget()
 
     def updateBurstValue(self, val):
@@ -149,25 +135,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QSlider.valueChanged (burstSlider)
         """
         self.burstButton.setText("BuRst: " + str(val))
-        self.blaster.setBurstValue(val)
-    #
-    # def enableButtons(self, en):
-    #     """SLOT: enableButtons
-    #
-    #     Ensures the rotation direction buttons don't appear selected when they're disabled
-    #
-    #     Expects:
-    #         bool - Whether the buttons are enabled
-    #
-    #     Connects to:
-    #         QCheckBox.toggled (rotateCheckBox)
-    #     """
-    #     style = "QPushButton {\n    border: 3px solid #61136E;\n    border-radius: 8px;\n    background-color: #FFFFFF;\n    color: #000000;\n}"
-    #     if en:
-    #         style += "\n\nQPushButton:checked {\n    background-color: #61136E;\n    color: #FFFFFF;\n}"
-    #     for b in self.directionButtons.buttons():
-    #         b.setStyleSheet(style)
-            
+        self.blaster.setBurstValue(val)        
     
     '''
     TODO: Figure out how to make sure this gets called during the shutdown routine

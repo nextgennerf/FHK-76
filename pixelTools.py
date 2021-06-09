@@ -1,6 +1,7 @@
 from enum import IntEnum
 from PyQt5.QtCore import QObject, pyqtSignal, QRegularExpression
 from PyQt5.QtWidgets import QWidget, QLabel, QDial, QCheckBox, QPushButton
+from metroMini import MetroMini
 
 class Animation(IntEnum):
     """ENUM: Animation
@@ -63,11 +64,11 @@ class PixelTool(QObject):
         
         self.buttons = buttons
         for b in self.buttons.buttons():
-            if b.text() is "stAtic":
+            if b.text() == "stAtic":
                 self.buttons.setId(b, Animation.STATIC)
-            elif b.text() is "BReAthe":
+            elif b.text() == "BReAthe":
                 self.buttons.setId(b, Animation.BREATHE)
-            elif b.text() is "cycle":
+            elif b.text() == "cycle":
                 self.buttons.setId(b, Animation.CYCLE)
                 b.toggled.connect(self.changeSliderStyle)
         self.buttons.idClicked.connect(self.changeMode)
@@ -92,7 +93,9 @@ class PixelTool(QObject):
         self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"cycle time: {val} sec"))
         self.dial.sliderReleased.connect(self.sendNewTiming)
         
-        self.changeSliderStyle(self.buttons[Animation.CYCLE].isChecked())
+        buttonList = self.buttons.buttons()
+        self.changeSliderStyle(buttonList[Animation.CYCLE].isChecked())
+        
         self.sendNewColor()
         self.changeMode(self.buttons.checkedId())
     
@@ -191,7 +194,7 @@ class PixelTool(QObject):
             color = arg
         else:
             color = f'rgb({self.colorObjects[0]["slider"].value()},{self.colorObjects[1]["slider"].value()},{self.colorObjects[2]["slider"].value()})'
-            if color is "rgb(0,0,0)":
+            if color == "rgb(0,0,0)":
                 color = "#ffffff"
                 self.square.setText("off")
             else:
@@ -216,7 +219,7 @@ class PixelTool(QObject):
         """
         if self.dial.value() == 0:
             self.dial.setValue(1)
-        if self.buttons.checkedId() is not Animation.STATIC:
+        if self.buttons.checkedId() != Animation.STATIC:
             self.sendToSerial.emit(f"pixel {self.pin} " + self.modes[self.buttons.checkedId()] + f" {self.dial.value()};")
     
     def changeMode(self, mode):
@@ -233,7 +236,7 @@ class PixelTool(QObject):
         Emits: sendToSerial
         """
         arg = ""
-        if mode is not Animation.STATIC:
+        if mode != Animation.STATIC:
             arg = f" {self.dial.value()}"
         self.sendToSerial.emit(f"pixel {self.pin} {self.modes[mode]}{arg};")
 
@@ -245,14 +248,15 @@ class RingTool(PixelTool):
     NOTE: The initialize method calls almost every slot as a function. Of the ones it does not call, updateSquare is called as a function by changeSliderStyle from the superclass and
     changePixel is called by revertColors.
     
-    SIGNALS                               SLOTS
-    ------------------    ---------------------
-    sendToSerial (str)    (int)      changeMode
-                          (int)     changePixel
-                          (bool) enableRotation
-                          (bool)   revertColors
-                          ()       sendNewColor
-                          ()      sendNewTiming
+    SIGNALS                                SLOTS
+    ------------------    ----------------------
+    sendToSerial (str)    (bool) changeDirection
+                          (int)       changeMode
+                          (int)      changePixel
+                          (bool)  enableRotation
+                          (bool)    revertColors
+                          ()        sendNewColor
+                          ()       sendNewTiming
     """
     
     sendToSerial = pyqtSignal(str)
@@ -294,12 +298,10 @@ class RingTool(PixelTool):
                 self.cycleLabel = c
         
         self.rotation = animationWidget.findChild(QCheckBox)        
-        rb = animationWidget.findChildren(QPushButton)
-        for b in rb:
-            if b.objectName().endswith("CCW"): # You have to look for this one first since it also ends in "CW"
-                self.ccwButton = b
-            elif b.objectName().endswith("CW"):
-                self.cwButton = b
+        cw = animationWidget.findChildren(QPushButton, QRegularExpression(".*[^C]CW$"))
+        self.direction = cw[0].group()
+        self.clockwise = cw[0].isChecked()
+        cw[0].toggled.connect(self.changeDirection)
         self.rotation.toggled.connect(self.enableRotation)
         self.rotateDial.valueChanged.connect(lambda val: self.rotateLabel.setText(f"RotAtion time: {val} sec"))
         self.rotateDial.sliderReleased.connect(self.sendNewTiming)
@@ -329,7 +331,8 @@ class RingTool(PixelTool):
         self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"cycle time: {val} sec"))
         self.dial.sliderReleased.connect(self.sendNewTiming)
         
-        self.changeSliderStyle(self.buttons[Animation.CYCLE].isChecked())
+        buttonList = self.buttons.buttons()
+        self.changeSliderStyle(buttonList[Animation.CYCLE].isChecked())
         
         if self.applyAll.isChecked():
             self.sendNewColor()
@@ -337,6 +340,7 @@ class RingTool(PixelTool):
             self.revertColors(False)
         
         self.changeMode(self.buttons.checkedId())
+        self.enableRotation(self.rotation.isChecked())
     
     def sendNewColor(self):
         """SLOT: sendNewColor (OVERRIDES PIXEL TOOL)
@@ -380,11 +384,11 @@ class RingTool(PixelTool):
             if self.buttons.checkedId() is not Animation.STATIC:
                 self.sendToSerial.emit(f"ring {self.modes[self.buttons.checkedId()]} {self.dial.value()};")
         elif dial is self.rotateDial:
-            if self.cwButton.isChecked():
-                d = "cw"
-            elif self.ccwButton.isChecked():
-                d = "ccw"
-            self.sendToSerial.emit("ring rotate " + d + f" {self.rotateDial.value()};")
+            if self.clockwise:
+                dirString = "cw"
+            else:
+                dirString = "ccw"
+            self.sendToSerial.emit("ring rotate " + dirString + f" {self.rotateDial.value()};")
     
     def changeMode(self, mode):
         """SLOT: changeMode (OVERRIDES PIXELTOOL)
@@ -423,7 +427,7 @@ class RingTool(PixelTool):
     def revertColors(self, applyAllState):
         """SLOT: revertColors
                 
-        Revert all ring LEDs to their stored colors when the apply all box is unchecked
+        Revert all ring LEDs to their stored colors when the apply all box is unchecked or to the current color setting when it is checked
                 
         Expects:
             bool - New state of the apply all box
@@ -431,7 +435,9 @@ class RingTool(PixelTool):
         Connects to:
             QCheckBox.toggled (applyAll)
         """
-        if applyAllState is False:
+        if applyAllState:
+            self.sendToSerial.emit(f'ring {self.colorObjects[0]["slider"].value()} {self.colorObjects[1]["slider"].value()} {self.colorObjects[2]["slider"].value()};')
+        else:
             self.changePixel(self.selectDial.value())
             for pin in range(len(self.colors)):
                 self.sendToSerial.emit(f"pixel {pin} {self.colors[pin][0]} {self.colors[pin][1]} {self.colors[pin][2]};")
@@ -450,11 +456,37 @@ class RingTool(PixelTool):
         Emits:
             sendToSerial
         """
-        s = "off"
+        msgEnd = "off"
+        style = "QPushButton {\n    border: 3px solid #61136E;\n    border-radius: 8px;\n    background-color: #FFFFFF;\n    color: #000000;\n}"
         if en:
-            arg = str(self.rotateDial.value())
-            if self.cwButton.isChecked():
-                s = "cw " + arg
-            elif self.ccwButton.isChecked():
-                s = "ccw " + arg
-        self.sendToSerial.emit("ring rotate " + s + ";")
+            style += "\n\nQPushButton:checked {\n    background-color: #61136E;\n    color: #FFFFFF;\n}"
+            val = str(self.rotateDial.value())
+            if self.clockwise:
+                msgEnd = "cw " + val
+            else:
+                msgEnd = "ccw " + val
+        for b in self.direction.buttons():
+                b.setStyleSheet(style)
+        self.sendToSerial.emit("ring rotate " + msgEnd + ";")
+    
+    def changeDirection(self, cw):
+        """SLOT: changeDirection
+                
+        Changes the direction of rotation if it receives an argument of True
+                
+        Expects:
+            bool - Whether the direction of rotation is clockwise
+                
+        Connects to:
+            QPushButton.toggled
+        
+        Emits:
+            sendToSerial
+        """
+        self.clockwise = cw
+        if cw:
+            dirString = "cw "
+        else:
+            dirString = "ccw "
+        self.sendToSerial.emit("ring rotate " + dirString + str(self.rotateDial.value()))
+            

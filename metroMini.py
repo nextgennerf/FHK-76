@@ -180,6 +180,7 @@ class MetroMini(QObject):
             self.serialPort.write(msg.encode())
             self.serialPort.waitForBytesWritten()
             self.printStatus.emit("Serial write complete")
-            self.displayTXMessage.emit(msg)
+            if msg != "request;": # This message prevents all others from being visible, and we know it's being sent if values are coming back
+                self.displayTXMessage.emit(msg)
         
         
