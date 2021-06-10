@@ -92,6 +92,8 @@ class MetroMini(QObject):
         MainWindow.initializeSerialObjects
     """
     
+    close = pyqtSignal()
+    
     def begin(self):
         """SLOT: begin
                 
@@ -115,6 +117,7 @@ class MetroMini(QObject):
             self.buffer = bytearray()
             self.serialPort.readyRead.connect(self.readData)
             self.broadcast.connect(self.writeData)
+            self.close.connect(self.serialPort.close)
             self.serialPort.open(QIODevice.ReadWrite)
     
     def connectSimulator(self, sim):
@@ -182,5 +185,3 @@ class MetroMini(QObject):
             self.printStatus.emit("Serial write complete")
             if msg != "request;": # This message prevents all others from being visible, and we know it's being sent if values are coming back
                 self.displayTXMessage.emit(msg)
-        
-        

@@ -1,7 +1,6 @@
 from enum import IntEnum
 from PyQt5.QtCore import QObject, pyqtSignal, QRegularExpression
 from PyQt5.QtWidgets import QWidget, QLabel, QDial, QCheckBox, QPushButton
-from metroMini import MetroMini
 
 class Animation(IntEnum):
     """ENUM: Animation
@@ -25,7 +24,7 @@ class PixelTool(QObject):
     sendToSerial (str)    (int)         changeMode
                           (bool) changeSliderStyle
                           ()          sendNewColor
-                          ()         sendNewTiming
+                          ()         sendNewCycle
                           ()          updateSquare
     """
 
@@ -90,8 +89,8 @@ class PixelTool(QObject):
             none
         """
         #These two signals can only be connected after the constructor is fully complete so they work properly in subclasses
-        self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"cycle time: {val} sec"))
-        self.dial.sliderReleased.connect(self.sendNewTiming)
+        self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"cycle time: {max(val, 1)} sec"))
+        self.dial.sliderReleased.connect(self.sendNewCycle)
         
         buttonList = self.buttons.buttons()
         self.changeSliderStyle(buttonList[Animation.CYCLE].isChecked())
@@ -194,17 +193,17 @@ class PixelTool(QObject):
             color = arg
         else:
             color = f'rgb({self.colorObjects[0]["slider"].value()},{self.colorObjects[1]["slider"].value()},{self.colorObjects[2]["slider"].value()})'
-            if color == "rgb(0,0,0)":
-                color = "#ffffff"
-                self.square.setText("off")
-            else:
-                self.square.setText("")
+        if color == "rgb(0,0,0)":
+            color = "#ffffff"
+            self.square.setText("off")
+        else:
+            self.square.clear()
         self.square.setStyleSheet("border: 2px solid #000000;\n"
                                   "color: #000000;\n"
                                   f"background-color: {color};")
         
-    def sendNewTiming(self):
-        """SLOT: sendNewTiming
+    def sendNewCycle(self):
+        """SLOT: sendNewCycle
     
         Checks a new cycle dial value to make sure it's valid and sends it to the MetroMini
     
@@ -256,7 +255,7 @@ class RingTool(PixelTool):
                           (bool)  enableRotation
                           (bool)    revertColors
                           ()        sendNewColor
-                          ()       sendNewTiming
+                          ()     sendNewRotation
     """
     
     sendToSerial = pyqtSignal(str)
@@ -292,7 +291,7 @@ class RingTool(PixelTool):
                 self.dial = d
         cycles = animationWidget.findChildren(QLabel, QRegularExpression("CYCLE$")) # There are two of these in a RingTool
         for c in cycles:
-            if c.text().startswith("rotate"):
+            if c.objectName().startswith("rotate"):
                 self.rotateLabel = c
             else:
                 self.cycleLabel = c
@@ -303,12 +302,14 @@ class RingTool(PixelTool):
         self.clockwise = cw[0].isChecked()
         cw[0].toggled.connect(self.changeDirection)
         self.rotation.toggled.connect(self.enableRotation)
-        self.rotateDial.valueChanged.connect(lambda val: self.rotateLabel.setText(f"RotAtion time: {val} sec"))
-        self.rotateDial.sliderReleased.connect(self.sendNewTiming)
+        self.rotation.toggled.connect(self.sendNewRotation)
+        self.rotateDial.valueChanged.connect(lambda val: self.rotateLabel.setText(f"RotAtion time: {float((val + 1) / 2)} sec"))
+        self.rotateDial.sliderReleased.connect(self.sendNewRotation)
         
         self.sendToSerial.connect(serial.broadcast)
         
-        self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"cycle time: {val} sec"))
+        self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"cycle time: {max(val, 1)} sec"))
+        self.dial.sliderReleased.connect(self.sendNewCycle)
 
     def initialize(self):
         """METHOD: initialize (OVERRIDES PIXELTOOL)
@@ -323,14 +324,7 @@ class RingTool(PixelTool):
                 
         Returns:
             none
-        
-        Emits:
-            sendToSerial
         """
-        #These two signals can only be connected after the constructor is fully complete so they work properly in subclasses
-        self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"cycle time: {val} sec"))
-        self.dial.sliderReleased.connect(self.sendNewTiming)
-        
         buttonList = self.buttons.buttons()
         self.changeSliderStyle(buttonList[Animation.CYCLE].isChecked())
         
@@ -363,32 +357,28 @@ class RingTool(PixelTool):
             self.colors[pin] = [self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value()]
             self.sendToSerial.emit(f"pixel {pin} {self.colors[pin][0]} {self.colors[pin][1]} {self.colors[pin][2]};")
         
-    def sendNewTiming(self):
-        """SLOT: sendNewTiming (OVERRIDES PIXELTOOL)
+    def sendNewRotation(self):
+        """SLOT: sendNewRotation
     
-        Checks a new cycle or rotation dial value to make sure it's valid and sends it to the MetroMini
+        Sends a new rotation timing command to the serial port
     
         Expects:
             none
     
         Connects to:
-            QDial.sliderReleased (dial, rotateDial)
+            QDial.sliderReleased (rotateDial), QCheckBox.toggled (rotation)
     
         Emits:
             sendToSerial
         """
-        dial = self.sender()
-        if dial.value() == 0:
-            dial.setValue(1)
-        if dial is self.dial:
-            if self.buttons.checkedId() is not Animation.STATIC:
-                self.sendToSerial.emit(f"ring {self.modes[self.buttons.checkedId()]} {self.dial.value()};")
-        elif dial is self.rotateDial:
+        if self.rotation.isChecked():
             if self.clockwise:
-                dirString = "cw"
+                dirString = "cw "
             else:
-                dirString = "ccw"
-            self.sendToSerial.emit("ring rotate " + dirString + f" {self.rotateDial.value()};")
+                dirString = "ccw "
+            self.sendToSerial.emit("ring rotate " + dirString + str(float((self.rotateDial.value() + 1) / 2)) + ";")
+        else:
+            self.sendToSerial.emit("ring rotate off;")
     
     def changeMode(self, mode):
         """SLOT: changeMode (OVERRIDES PIXELTOOL)
@@ -445,34 +435,24 @@ class RingTool(PixelTool):
     def enableRotation(self, en):
         """SLOT: enableRotation
                 
-        Enable or disable rotation in the NeoPixel ring
-                
+        Change the appearance of the rotation direction buttons when rotation is enabled or disabled
+        
         Expects:
-            bool - Whether rotation is to be enabled
+            bool - Whether rotation is enabled
                 
         Connects to:
             QCheckBox.toggled (rotation)
-        
-        Emits:
-            sendToSerial
         """
-        msgEnd = "off"
         style = "QPushButton {\n    border: 3px solid #61136E;\n    border-radius: 8px;\n    background-color: #FFFFFF;\n    color: #000000;\n}"
         if en:
             style += "\n\nQPushButton:checked {\n    background-color: #61136E;\n    color: #FFFFFF;\n}"
-            val = str(self.rotateDial.value())
-            if self.clockwise:
-                msgEnd = "cw " + val
-            else:
-                msgEnd = "ccw " + val
         for b in self.direction.buttons():
                 b.setStyleSheet(style)
-        self.sendToSerial.emit("ring rotate " + msgEnd + ";")
     
     def changeDirection(self, cw):
         """SLOT: changeDirection
                 
-        Changes the direction of rotation if it receives an argument of True
+        Changes the direction of rotation
                 
         Expects:
             bool - Whether the direction of rotation is clockwise
@@ -488,5 +468,5 @@ class RingTool(PixelTool):
             dirString = "cw "
         else:
             dirString = "ccw "
-        self.sendToSerial.emit("ring rotate " + dirString + str(self.rotateDial.value()))
+        self.sendToSerial.emit("ring rotate " + dirString + str(float((self.rotateDial.value() + 1) / 2)) + ";")
             

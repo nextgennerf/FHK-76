@@ -92,7 +92,7 @@ QTabBar::tab:!selected {
 }x</string>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="status">
      <property name="styleSheet">
@@ -794,9 +794,9 @@ QPushButton:checked {
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>3</y>
+        <y>10</y>
         <width>800</width>
-        <height>430</height>
+        <height>421</height>
        </rect>
       </property>
       <property name="font">
@@ -826,7 +826,7 @@ QToolBox::tab:selected {
          <x>0</x>
          <y>0</y>
          <width>800</width>
-         <height>262</height>
+         <height>253</height>
         </rect>
        </property>
        <attribute name="label">
@@ -838,7 +838,7 @@ QToolBox::tab:selected {
           <x>0</x>
           <y>0</y>
           <width>821</width>
-          <height>261</height>
+          <height>251</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="leftGrid">
@@ -1125,6 +1125,9 @@ QSlider::handle:vertical {
              <property name="spacing">
               <number>0</number>
              </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
              <item>
               <widget class="QRadioButton" name="leftStaticButton">
                <property name="sizePolicy">
@@ -1321,7 +1324,7 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
          <x>0</x>
          <y>0</y>
          <width>800</width>
-         <height>262</height>
+         <height>263</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1333,7 +1336,7 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
           <x>0</x>
           <y>0</y>
           <width>821</width>
-          <height>261</height>
+          <height>251</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="rightGrid">
@@ -1813,7 +1816,7 @@ QSlider::handle:vertical {
          <x>0</x>
          <y>0</y>
          <width>800</width>
-         <height>262</height>
+         <height>253</height>
         </rect>
        </property>
        <attribute name="label">
@@ -1825,7 +1828,7 @@ QSlider::handle:vertical {
           <x>0</x>
           <y>0</y>
           <width>801</width>
-          <height>261</height>
+          <height>251</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="frontColorLayout">
@@ -2111,6 +2114,12 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgb
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
           </spacer>
          </item>
          <item>
@@ -2214,6 +2223,12 @@ QCheckBox::indicator:checked {image: url(checkmark.png);}</string>
            <property name="sizeType">
             <enum>QSizePolicy::Expanding</enum>
            </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
           </spacer>
          </item>
         </layout>
@@ -2225,7 +2240,7 @@ QCheckBox::indicator:checked {image: url(checkmark.png);}</string>
          <x>0</x>
          <y>0</y>
          <width>800</width>
-         <height>262</height>
+         <height>253</height>
         </rect>
        </property>
        <attribute name="label">
@@ -2237,7 +2252,7 @@ QCheckBox::indicator:checked {image: url(checkmark.png);}</string>
           <x>0</x>
           <y>0</y>
           <width>801</width>
-          <height>261</height>
+          <height>251</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="frontGrid">
@@ -2322,7 +2337,7 @@ QCheckBox::indicator:checked {image: url(checkmark.png);}</string>
             <string notr="true">color: #000000</string>
            </property>
            <property name="text">
-            <string>RotAtion time: 1 sec</string>
+            <string>RotAtion time: 1.0 sec</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
@@ -2361,6 +2376,9 @@ QCheckBox::indicator:checked {image: url(checkmark.png);}</string>
              <width>0</width>
              <height>0</height>
             </size>
+           </property>
+           <property name="minimum">
+            <number>0</number>
            </property>
            <property name="maximum">
             <number>30</number>
@@ -2547,8 +2565,11 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
                <height>175</height>
               </size>
              </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
              <property name="maximum">
-              <number>18</number>
+              <number>19</number>
              </property>
              <property name="pageStep">
               <number>2</number>
@@ -3088,9 +3109,9 @@ QRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height
  </connections>
  <buttongroups>
   <buttongroup name="modeButtons"/>
-  <buttongroup name="frontButtons"/>
   <buttongroup name="directionButtons"/>
-  <buttongroup name="leftButtons"/>
   <buttongroup name="rightButtons"/>
+  <buttongroup name="leftButtons"/>
+  <buttongroup name="frontButtons"/>
  </buttongroups>
 </ui>

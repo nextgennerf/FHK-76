@@ -49,6 +49,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         MetroMini.broadcast
     """
     
+    closeSerial = pyqtSignal()
+    
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
@@ -135,13 +137,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QSlider.valueChanged (burstSlider)
         """
         self.burstButton.setText("BuRst: " + str(val))
-        self.blaster.setBurstValue(val)        
+        self.blaster.setBurstValue(val)
     
-    '''
-    TODO: Figure out how to make sure this gets called during the shutdown routine
-    '''
-    def saveSettings(self):
-        settings = {"fps":self.fps.getTarget(), "psi":self.psi.getTarget(), "burst":self.burstValue}
+    def closeEvent(self, *args, **kwargs):
+        # TODO: Stop program from closing "unexpectedly"
+        self.closeSerial.emit()
+        if useSimulator:
+            self.simulator.close()
+        settings = {"fps":self.fpsDisplay.getTarget(), "psi":self.psiDisplay.getTarget(), "burst":self.blaster.getBurstValue()}
         with open('settings.json', 'w') as file:
             json.dump(settings,file,indent=2)
         file.close()

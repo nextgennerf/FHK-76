@@ -227,6 +227,22 @@ class FHK76(QObject):
         """
         self.burstValue = val
     
+    def getBurstValue(self):
+        """METHOD: getBurstValue
+                
+        Access method for the burst value
+                
+        Called by:
+            MainWindow.closeEvent
+                
+        Arguments:
+            none
+                
+        Returns:
+            int - The current burst value
+        """
+        return self.burstValue
+    
     def connectSimulator(self, sim):
         """METHOD: connectSimulator
                 
