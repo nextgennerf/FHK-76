@@ -138,7 +138,7 @@ class PixelTool(QObject):
         Emits:
             sendToSerial
         """
-        self.sendToSerial.emit(f'pixel {self.pin} {self.colorObjects[0]["slider"].value()} {self.colorObjects[1]["slider"].value()} {self.colorObjects[2]["slider"].value()};')
+        self.sendToSerial.emit(f'pixel {self.pin} {self.convertToHSV(self.colorObjects[0]["slider"].value(),self.colorObjects[1]["slider"].value(),self.colorObjects[2]["slider"].value())};')
 
     def changeSliderStyle(self, en):
         """SLOT: changeSliderStyle
@@ -238,6 +238,37 @@ class PixelTool(QObject):
         if mode != Animation.STATIC:
             arg = f" {self.dial.value()}"
         self.sendToSerial.emit(f"pixel {self.pin} {self.modes[mode]}{arg};")
+    
+    def convertToHSV(self, ri, gi, bi):
+        """METHOD: convertToHSV
+                
+        Converts an RGB value to HSV before sending it to the MetroMini
+                
+        Called by:
+            sendNewColor, RingTool.revertColors
+                
+        Arguments:
+            int, int, int - The red, green, and blue values of the color
+                
+        Returns:
+            str - A string containing the hue, saturation, and value of the color
+        """
+        r, g, b = float(ri / 255.0), float(gi / 255.0), float(bi / 255.0)
+        v = max(r, g, b)
+        c = v - min(r, g, b)
+        if c == 0:
+            h = float(0)
+        elif v == r:
+            h = float(60.0 * ((g - b) / c))
+        elif v == g:
+            h = float(60.0 * (2.0 + (b - r) / c))
+        elif v == b:
+            h = float(60.0 * (4.0 + (r - g) / c))
+        if v == 0:
+            s = float(0)
+        else:
+            s = float(c / v)
+        return f"{int(h * 65535 / 360)} {int(s * 255)} {int(v * 255)}"
 
 class RingTool(PixelTool):
     """CLASS: RingTool
@@ -351,11 +382,11 @@ class RingTool(PixelTool):
             sendToSerial
         """
         if self.applyAll.isChecked():
-            self.sendToSerial.emit(f'ring {self.colorObjects[0]["slider"].value()} {self.colorObjects[1]["slider"].value()} {self.colorObjects[2]["slider"].value()};')
+            self.sendToSerial.emit(f'ring {self.convertToHSV(self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value())};')
         else:
             pin = (self.selectDial.value() + self.locationOffset) % len(self.colors)
             self.colors[pin] = [self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value()]
-            self.sendToSerial.emit(f"pixel {pin} {self.colors[pin][0]} {self.colors[pin][1]} {self.colors[pin][2]};")
+            self.sendToSerial.emit(f"pixel {pin} {self.convertToHSV(self.colors[pin][0], self.colors[pin][1], self.colors[pin][2])};")
         
     def sendNewRotation(self):
         """SLOT: sendNewRotation
@@ -426,11 +457,11 @@ class RingTool(PixelTool):
             QCheckBox.toggled (applyAll)
         """
         if applyAllState:
-            self.sendToSerial.emit(f'ring {self.colorObjects[0]["slider"].value()} {self.colorObjects[1]["slider"].value()} {self.colorObjects[2]["slider"].value()};')
+            self.sendToSerial.emit(f'ring {self.convertToHSV(self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value())};')
         else:
             self.changePixel(self.selectDial.value())
             for pin in range(len(self.colors)):
-                self.sendToSerial.emit(f"pixel {pin} {self.colors[pin][0]} {self.colors[pin][1]} {self.colors[pin][2]};")
+                self.sendToSerial.emit(f"pixel {pin} {self.convertToHSV(self.colors[pin][0], self.colors[pin][1], self.colors[pin][2])};")
     
     def enableRotation(self, en):
         """SLOT: enableRotation
