@@ -67,7 +67,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.modeButtons.setId(self.burstButton, 1)
         self.modeButtons.setId(self.autoButton, 2)
         
-        #FUTURE: Allow for blaster to function without MetroMini-connected features
+        #FUTURE: Allow for blaster to function without Metro Mini connected features
         self.thread = QThread()
         self.uc = MetroMini()
         self.uc.moveToThread(self.thread)
@@ -75,9 +75,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.uc.ready.connect(self.initializeSerialObjects)
         self.sendToSerial.connect(self.uc.broadcast)
         
-        self.leftTool = PixelTool(self.leftSide, self.leftButtons, self.uc, 24)
-        self.rightTool = PixelTool(self.rightSide, self.rightButtons, self.uc, 25)
-        self.frontTool = RingTool(self.frontColors, self.frontAnimation, self.frontButtons, self.uc, 0, 24)
+        self.leftTool = PixelTool(self.leftSide, self.leftButtons, self.uc, 0)
+        self.rightTool = PixelTool(self.rightSide, self.rightButtons, self.uc, 1)
+        self.frontTool = RingTool(self.frontColors, self.frontAnimation, self.frontButtons, self.uc, 24)
         
         self.simulator = None
         if useSimulator:

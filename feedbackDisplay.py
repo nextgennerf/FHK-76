@@ -238,7 +238,7 @@ class FeedbackDisplay(QStateMachine):
     def sendRequest(self):
         """SLOT: sendRequest
                 
-        Sends a serial message requesting a new value from the MetroMini. Eliminates the need for lambda.
+        Sends a serial message requesting a new value from the Metro Mini. Eliminates the need for lambda.
                 
         Expects:
             none
@@ -254,7 +254,7 @@ class FeedbackDisplay(QStateMachine):
     def sendTarget(self):
         """SLOT: sendTarget
                 
-        Sends a serial message with a new target value to the MetroMini. Eliminates the need for lambda.
+        Sends a serial message with a new target value to the Metro Mini. Eliminates the need for lambda.
                 
         Expects:
             none

@@ -15,7 +15,7 @@ class Animation(IntEnum):
 class PixelTool(QObject):
     """CLASS: PixelTool
     
-    This class handles some of the interactions between the objects in a QToolBox pane for a NeoPixel and sends messages to the MetroMini when settings change.
+    This class handles some of the interactions between the objects in a QToolBox pane for a NeoPixel and sends messages to the Metro Mini when settings change.
     
     NOTE: The initialize method calls almost every slot as a function. The one it does not call, updateSquare, is called as a function by changeSliderStyle.
     
@@ -41,10 +41,10 @@ class PixelTool(QObject):
     """
     
     #TODO: Add argument for passing initial settings
-    def __init__(self, widget, buttons, serial, pin):
+    def __init__(self, widget, buttons, serial, index):
         super().__init__()
         
-        self.pin = pin
+        self.index = index
         self.modes = {Animation.STATIC: "static", Animation.BREATHE: "breathe", Animation.CYCLE: "cycle"}
         
         self.colorObjects = [self.identifyObjects(widget, ".*Red.*"), self.identifyObjects(widget, ".*Green.*"), self.identifyObjects(widget, ".*Blue.*")]
@@ -77,7 +77,7 @@ class PixelTool(QObject):
     def initialize(self):
         """METHOD: initialize
                 
-        Sends initial settings to the MetroMini
+        Sends initial settings to the Metro Mini
                 
         Called by:
             MainWindow.initializeSerialObjects
@@ -138,7 +138,7 @@ class PixelTool(QObject):
         Emits:
             sendToSerial
         """
-        self.sendToSerial.emit(f'pixel {self.pin} {self.convertToHSV(self.colorObjects[0]["slider"].value(),self.colorObjects[1]["slider"].value(),self.colorObjects[2]["slider"].value())};')
+        self.sendToSerial.emit(f'pixel {self.index} {self.convertToHSV(self.colorObjects[0]["slider"].value(),self.colorObjects[1]["slider"].value(),self.colorObjects[2]["slider"].value())};')
 
     def changeSliderStyle(self, en):
         """SLOT: changeSliderStyle
@@ -205,7 +205,7 @@ class PixelTool(QObject):
     def sendNewCycle(self):
         """SLOT: sendNewCycle
     
-        Checks a new cycle dial value to make sure it's valid and sends it to the MetroMini
+        Checks a new cycle dial value to make sure it's valid and sends it to the Metro Mini
     
         Expects:
             none
@@ -219,7 +219,7 @@ class PixelTool(QObject):
         if self.dial.value() == 0:
             self.dial.setValue(1)
         if self.buttons.checkedId() != Animation.STATIC:
-            self.sendToSerial.emit(f"pixel {self.pin} " + self.modes[self.buttons.checkedId()] + f" {self.dial.value()};")
+            self.sendToSerial.emit(f"pixel {self.index} " + self.modes[self.buttons.checkedId()] + f" {self.dial.value()};")
     
     def changeMode(self, mode):
         """SLOT: changeMode
@@ -237,12 +237,12 @@ class PixelTool(QObject):
         arg = ""
         if mode != Animation.STATIC:
             arg = f" {self.dial.value()}"
-        self.sendToSerial.emit(f"pixel {self.pin} {self.modes[mode]}{arg};")
+        self.sendToSerial.emit(f"pixel {self.index} {self.modes[mode]}{arg};")
     
     def convertToHSV(self, ri, gi, bi):
         """METHOD: convertToHSV
                 
-        Converts an RGB value to HSV before sending it to the MetroMini
+        Converts an RGB value to HSV before sending it to the Metro Mini
                 
         Called by:
             sendNewColor, RingTool.revertColors
@@ -270,10 +270,11 @@ class PixelTool(QObject):
             s = float(c / v)
         return f"{int(h * 65535 / 360)} {int(s * 255)} {int(v * 255)}"
 
+#TODO: Disable and uncheck apply all box if Rotate is on
 class RingTool(PixelTool):
     """CLASS: RingTool
     
-    This class handles some of the interactions between the objects in a pair of QToolBox panes for a ring of NeoPixels and sends messages to the MetroMini when settings change.
+    This class handles some of the interactions between the objects in a pair of QToolBox panes for a ring of NeoPixels and sends messages to the Metro Mini when settings change.
     
     NOTE: The initialize method calls almost every slot as a function. Of the ones it does not call, updateSquare is called as a function by changeSliderStyle from the superclass and
     changePixel is called by revertColors.
@@ -302,8 +303,8 @@ class RingTool(PixelTool):
     """
     
     #TODO: Add argument for passing initial settings
-    def __init__(self, colorWidget, animationWidget, buttons, serial, startPin, length):
-        super().__init__(colorWidget, buttons, serial, startPin)
+    def __init__(self, colorWidget, animationWidget, buttons, serial, length):
+        super().__init__(colorWidget, buttons, serial, 0)
         
         self.locationOffset = 0 # Since I cannot control which LED is where, this will allow me to shift the dial values to real locations.
         self.colors = [[0, 0, 0]] * length
@@ -345,7 +346,7 @@ class RingTool(PixelTool):
     def initialize(self):
         """METHOD: initialize (OVERRIDES PIXELTOOL)
                 
-        Sends initial settings to the MetroMini
+        Sends initial settings to the Metro Mini
                 
         Called by:
             MainWindow.initializeSerialObjects
@@ -365,7 +366,7 @@ class RingTool(PixelTool):
             self.revertColors(False)
         
         self.changeMode(self.buttons.checkedId())
-        self.enableRotation(self.rotation.isChecked())
+        self.sendNewRotation()
     
     def sendNewColor(self):
         """SLOT: sendNewColor (OVERRIDES PIXEL TOOL)
@@ -382,11 +383,12 @@ class RingTool(PixelTool):
             sendToSerial
         """
         if self.applyAll.isChecked():
-            self.sendToSerial.emit(f'ring {self.convertToHSV(self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value())};')
+            arg = " "
         else:
-            pin = (self.selectDial.value() + self.locationOffset) % len(self.colors)
-            self.colors[pin] = [self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value()]
-            self.sendToSerial.emit(f"pixel {pin} {self.convertToHSV(self.colors[pin][0], self.colors[pin][1], self.colors[pin][2])};")
+            index = (self.selectDial.value() + self.locationOffset) % len(self.colors)
+            arg = f" p{index} "
+            self.colors[index] = [self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value()]
+        self.sendToSerial.emit(f'ring{arg}{self.convertToHSV(self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value())};')
         
     def sendNewRotation(self):
         """SLOT: sendNewRotation
@@ -404,12 +406,14 @@ class RingTool(PixelTool):
         """
         if self.rotation.isChecked():
             if self.clockwise:
-                dirString = "cw "
+                dirString = "clw "
             else:
                 dirString = "ccw "
-            self.sendToSerial.emit("ring rotate " + dirString + str(float((self.rotateDial.value() + 1) / 2)) + ";")
+            intString = str(float((self.rotateDial.value() + 1) / 2))
         else:
-            self.sendToSerial.emit("ring rotate off;")
+            dirString = "off"
+            intString = "0"
+        self.sendToSerial.emit("ring rotate " + dirString + intString + ";")
     
     def changeMode(self, mode):
         """SLOT: changeMode (OVERRIDES PIXELTOOL)
@@ -429,21 +433,21 @@ class RingTool(PixelTool):
             arg = f" {self.dial.value()}"
         self.sendToSerial.emit(f"ring {self.modes[mode]}{arg};")
         
-    def changePixel(self, pin):
+    def changePixel(self, index):
         """SLOT: changePixel
                 
         Change which pixel's RGB values are displayed in the menu
                 
         Expects:
-            int - The pin number of the pixel to be displayed
+            int - The id number of the pixel to be displayed
                 
         Connects to:
             QDial.valueChanged (selectDial)
         """
-        if pin == 24:
-            pin = 0
+        if index == 24:
+            index = 0
         for n in range(3):
-            self.colorObjects[n]["slider"].setValue(self.colors[(pin + len(self.colors) - self.locationOffset) % len(self.colors)][n])
+            self.colorObjects[n]["slider"].setValue(self.colors[(id + len(self.colors) - self.locationOffset) % len(self.colors)][n])
     
     def revertColors(self, applyAllState):
         """SLOT: revertColors
@@ -460,8 +464,8 @@ class RingTool(PixelTool):
             self.sendToSerial.emit(f'ring {self.convertToHSV(self.colorObjects[0]["slider"].value(), self.colorObjects[1]["slider"].value(), self.colorObjects[2]["slider"].value())};')
         else:
             self.changePixel(self.selectDial.value())
-            for pin in range(len(self.colors)):
-                self.sendToSerial.emit(f"pixel {pin} {self.convertToHSV(self.colors[pin][0], self.colors[pin][1], self.colors[pin][2])};")
+            for index in range(len(self.colors)):
+                self.sendToSerial.emit(f"ring p{index} {self.convertToHSV(self.colors[index][0], self.colors[index][1], self.colors[index][2])};")
     
     def enableRotation(self, en):
         """SLOT: enableRotation
@@ -496,7 +500,7 @@ class RingTool(PixelTool):
         """
         self.clockwise = cw
         if cw:
-            dirString = "cw "
+            dirString = "clw "
         else:
             dirString = "ccw "
         self.sendToSerial.emit("ring rotate " + dirString + str(float((self.rotateDial.value() + 1) / 2)) + ";")

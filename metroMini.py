@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal, QIODevice, QObject, QMutex, QMutexLocker
 class MetroMini(QObject):
     """CLASS: MetroMini
     
-    This class wraps the serial port used to communicate with the peripheral MetroMini processor.
+    This class wraps the serial port used to communicate with the peripheral Metro Mini processor.
     
     SIGNALS                                 SLOTS
     ------------------------    -----------------
@@ -23,7 +23,7 @@ class MetroMini(QObject):
     newDataAvailable = pyqtSignal(float)
     """SIGNAL: newDataAvailable
             
-    Emitted when a new pressure value has been received from the MetroMini
+    Emitted when a new pressure value has been received from the Metro Mini
             
     Broadcasts:
         float - The new value
@@ -83,7 +83,7 @@ class MetroMini(QObject):
     ready = pyqtSignal()
     """SIGNAL: ready
             
-    Announces that the MetroMini is ready for data exchange
+    Announces that the Metro Mini is ready for data exchange
             
     Broadcasts:
         none
