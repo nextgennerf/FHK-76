@@ -19,10 +19,12 @@ from FHKSimulator import Simulator
 from blaster import FHK76
 from metroMini import MetroMini
 from feedbackDisplay import FeedbackDisplay
-from pixelTools import PixelTool, RingTool
+from pixelTool import PixelTool
+from ringTool import RingTool
 
 useSimulator = True
 
+#FUTURE: save GUI window settings
 class MainWindow(QMainWindow, Ui_MainWindow):
     """CLASS: MainWindow
     
@@ -59,7 +61,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if os.path.exists("settings.json"): # load settings from file
             with open("settings.json") as file:
                 settings = json.load(file)
-            file.close()
+                file.close()
         else: # default settings 
             settings = {"fps":100, "psi":60, "burst":3}
         
@@ -77,7 +79,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         self.leftTool = PixelTool(self.leftSide, self.leftButtons, self.uc, 0)
         self.rightTool = PixelTool(self.rightSide, self.rightButtons, self.uc, 1)
-        self.frontTool = RingTool(self.frontColors, self.frontAnimation, self.frontButtons, self.uc, 24)
+        self.frontTool = RingTool(self.frontPattern, self.frontColor, self.uc)
         
         self.simulator = None
         if useSimulator:

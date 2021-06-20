@@ -110,16 +110,18 @@ class MetroMini(QObject):
         try:
             path = path[0]
         except IndexError:
-            print("Serial device not connected!")
+            self.displayRXMessage.emit("No serial connected")
+            self.ready.emit()
         else:
             self.serialPort = QSerialPort(path)
             self.serialPort.setBaudRate(9600)
-            self.lock = QMutex()
             self.buffer = bytearray()
             self.serialPort.readyRead.connect(self.readData)
-            self.broadcast.connect(self.writeData)
             self.close.connect(self.serialPort.close)
             self.serialPort.open(QIODevice.ReadWrite)
+        finally:
+            self.lock = QMutex()
+            self.broadcast.connect(self.writeData)
     
     def connectSimulator(self, sim):
         """METHOD: connectSimulator
@@ -155,22 +157,19 @@ class MetroMini(QObject):
            newDataAvailable
         """
         with QMutexLocker(self.lock):
-            if self.serialPort is not None:
-                bytesIn = self.serialPort.readAll()
-                for b in bytesIn:
-                    if b == b'\n': # This translates to the \n character which means the message is complete
-                        msg = self.buffer.decode().strip()
-                        self.displayRXMessage.emit(msg)
-                        if msg == "ready":
-                            self.ready.emit()
-                        else:
-                            self.newDataAvailable.emit(float(msg))
-                        self.printStatus.emit("Serial read complete")
-                        self.buffer = bytearray() # Clear buffer
-                    elif b != b'\r': # Ignore '\r' character too
-                        self.buffer = self.buffer + b
-            else:
-                self.displayRXMessage("serial disconnected")
+            bytesIn = self.serialPort.readAll()
+            for b in bytesIn:
+                if b == b'\n': # This translates to the \n character which means the message is complete
+                    msg = self.buffer.decode().strip()
+                    self.displayRXMessage.emit(msg)
+                    if msg == "ready":
+                        self.ready.emit()
+                    else:
+                        self.newDataAvailable.emit(float(msg))
+                    self.printStatus.emit("Serial read complete")
+                    self.buffer = bytearray() # Clear buffer
+                elif b != b'\r': # Ignore '\r' character too
+                    self.buffer = self.buffer + b
     
     def writeData(self, msg):
         """SLOT: writeData
@@ -181,12 +180,12 @@ class MetroMini(QObject):
             str - The message to be sent
                 
         Connects to:
-            FeedbackDisplay.messageReady (MainWindow.psiDisplay)
+            broadcast
         """
         with QMutexLocker(self.lock):
             if self.serialPort is not None:
                 self.serialPort.write(msg.encode())
                 self.serialPort.waitForBytesWritten()
                 self.printStatus.emit("Serial write complete")
-                if msg != "request;": # This message prevents all others from being visible, and we know it's being sent if values are coming back
-                    self.displayTXMessage.emit(msg)
+            if msg != "request;": # This message prevents all others from being visible, and we know it's being sent if values are coming back
+                self.displayTXMessage.emit(msg)
