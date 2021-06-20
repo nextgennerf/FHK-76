@@ -1,0 +1,14 @@
+{
+  "LayoutCountButton-True": "QRadioButton{color: #000000}\nQRadioButton::indicator{border: 3px solid #000000; border-radius: 12px; background-color: #FFFFFF; width: 18px; height: 18px; margin-left: 5px; margin-right: 5px}\nQRadioButton::indicator::checked{border: 8px solid #61136E; width: 8px; height: 8px}",
+  "LayoutCountButton-False": "QRadioButton{color: #D6D6D6}\nQRadioButton::indicator{border: 3px solid #D6D6D6; border-radius: 12px; background-color: #FFFFFF; width: 18px; height: 18px; margin-left: 5px; margin-right: 5px}",
+  "QCheckBox-True": "QCheckBox{spacing: 10px; color: #000000}\nQCheckBox::indicator{border: 3px solid #000000; border-radius: 6px; background-color: #FFFFFF; width: 20px; height: 20px}\nQCheckBox::indicator:checked{image: url(checkmark.png)}",
+  "QCheckBox-False": "QCheckBox{spacing: 10px; color: #D6D6D6}\nQCheckBox::indicator{border: 3px solid #D6D6D6; border-radius: 6px; background-color: #FFFFFF; width: 20px; height: 20px}",
+  "QLabel-True": "color: #000000",
+  "QLabel-False": "color: #D6D6D6",
+  "QPushButton-True": "QPushButton{border: 3px solid #61136E; border-radius: 8px; background-color: #FFFFFF; color: #000000}\nQPushButton:checked{background-color: #61136E; color: #FFFFFF}",
+  "QPushButton-False": "QPushButton{border: 3px solid #61136E; border-radius: 8px; background-color: #FFFFFF; color: #D6D6D6}",
+  "QRadioButton-True": "QRadioButton{color: #000000}\nQRadioButton::indicator{border: 3px solid #000000; border-radius: 15px; background-color: #FFFFFF; width: 24px; height: 24px; margin-left: 5px; margin-right: 5px}\nQRadioButton::indicator::checked{border: 10px solid #61136E; width: 10px; height: 10px}",
+  "QRadioButton-False": "QRadioButton{color: #D6D6D6}\nQRadioButton::indicator{border: 3px solid #D6D6D6; border-radius: 15px; background-color: #FFFFFF; width: 24px; height: 24px; margin-left: 5px; margin-right: 5px}",
+  "QSlider-True": "QSlider::groove:vertical{border: 1px solid #000000; width: 4px; background: #000000; margin: 5px}\nQSlider::handle:vertical{background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #9313A0, stop:1 #2F133C); border: 1px solid #000000; height: 18px; margin: 2px -20px; border-radius: 3px}",
+  "QSlider-False": "QSlider::groove:vertical{border: 1px solid #D6D6D6; width: 4px; background: #D6D6D6; margin: 5px}\nQSlider::handle:vertical{background: #FFFFFF; border: 1px solid #D6D6D6; height: 18px; margin: 2px -20px; border-radius: 3px}"
+}
