@@ -92,7 +92,7 @@ QTabBar::tab:!selected {
 }x</string>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="status">
      <property name="styleSheet">
@@ -2186,6 +2186,9 @@ QRadioButton::indicator:checked{border: 10px solid #61136E; width: 10px; height:
            </item>
            <item>
             <widget class="QRadioButton" name="button1">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                <horstretch>0</horstretch>
@@ -2739,7 +2742,7 @@ QRadioButton::indicator:checked{border: 10px solid #61136E; width: 10px; height:
             <enum>QFrame::NoFrame</enum>
            </property>
            <property name="currentIndex">
-            <number>0</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="stepOption">
             <widget class="QWidget" name="horizontalLayoutWidget_4">
@@ -2911,7 +2914,7 @@ QRadioButton::indicator:checked{border: 10px solid #61136E; width: 10px; height:
                  </size>
                 </property>
                 <property name="maximum">
-                 <number>29</number>
+                 <number>31</number>
                 </property>
                 <property name="pageStep">
                  <number>5</number>
@@ -3782,6 +3785,22 @@ QRadioButton::indicator:checked{border: 10px solid #61136E; width: 10px; height:
     <hint type="destinationlabel">
      <x>401</x>
      <y>214</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>frontRainbowButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>stepDial</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>98</x>
+     <y>357</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>523</x>
+     <y>346</y>
     </hint>
    </hints>
   </connection>

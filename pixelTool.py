@@ -1,5 +1,6 @@
+import json
 from PyQt5.QtCore import QObject, pyqtSignal, QRegularExpression
-from PyQt5.QtWidgets import QWidget, QLabel, QDial
+from PyQt5.QtWidgets import QWidget, QLabel, QDial, QRadioButton
 from ringTool import Animation
 
 #FUTURE: Create superclass for all NeoPixel tool classes
@@ -8,15 +9,12 @@ class PixelTool(QObject):
     
     This class handles some of the interactions between the objects in a QToolBox pane for a NeoPixel and sends messages to the Metro Mini when settings change.
     
-    NOTE: The initialize method calls almost every slot as a function. The one it does not call, updateSquare, is called as a function by changeSliderStyle.
-    
-    SIGNALS                                  SLOTS
-    ------------------    ------------------------
-    sendToSerial (str)    (int)         changeMode
-                          (bool) changeSliderStyle
-                          ()          sendNewColor
-                          ()         sendNewCycle
-                          ()          updateSquare
+    SIGNALS                          SLOTS
+    ------------------    ----------------
+    sendToSerial (str)    (int) changeMode
+                          ()  colorChanged
+                          ()  sendNewColor
+                          ()  sendNewCycle
     """
 
     sendToSerial = pyqtSignal(str)
@@ -32,29 +30,30 @@ class PixelTool(QObject):
     """
     
     #TODO: Add argument for passing initial settings
-    #TODO: Eliminate buttons argument
     #FUTURE: Incorporate RingTool's Color enum (both would be moved to the superclass)
-    def __init__(self, widget, buttons, serial, index):
+    def __init__(self, widget, serial, index):
         super().__init__()
+        
+        with open("styles.json") as file:
+            self.styles = json.load(file)
+            file.close()
         
         self.index = index
         self.modes = {Animation.STATIC: "static", Animation.BREATHE: "breathe", Animation.CYCLE: "cycle"}
         
         self.colorObjects = [self.identifyObjects(widget, ".*Red.*"), self.identifyObjects(widget, ".*Green.*"), self.identifyObjects(widget, ".*Blue.*")]
-        c = widget.findChildren(QLabel, QRegularExpression("Color$"))
-        self.square = c[0]
+        self.square = widget.findChildren(QLabel, QRegularExpression("Color$"))[0]
         
         self.dial = widget.findChild(QDial)
-        c = widget.findChildren(QLabel, QRegularExpression("CYCLE$"))
-        self.cycleLabel = c[0]
+        self.cycleLabel = widget.findChildren(QLabel, QRegularExpression("CYCLE$"))[0]
         self.dial.valueChanged.connect(lambda val: self.cycleLabel.setText(f"AnimAtion time: {max(val, 1)} sec"))
         self.dial.sliderReleased.connect(self.sendNewCycle)
         
         for obj in self.colorObjects:
-            obj["slider"].valueChanged.connect(self.updateSquare)
+            obj["slider"].valueChanged.connect(self.colorChanged)
             obj["slider"].sliderReleased.connect(self.sendNewColor)
         
-        self.buttons = buttons
+        self.buttons = widget.findChildren(QRadioButton)[0].group()
         for b in self.buttons.buttons():
             if b.text() == "stAtic":
                 self.buttons.setId(b, Animation.STATIC)
@@ -62,7 +61,6 @@ class PixelTool(QObject):
                 self.buttons.setId(b, Animation.BREATHE)
             elif b.text() == "cycle":
                 self.buttons.setId(b, Animation.CYCLE)
-                b.toggled.connect(self.changeSliderStyle)
         self.buttons.idClicked.connect(self.changeMode)
         
         self.sendToSerial.connect(serial.broadcast)
@@ -70,7 +68,7 @@ class PixelTool(QObject):
     def initialize(self):
         """METHOD: initialize
                 
-        Sends initial settings to the Metro Mini
+        Sends initial settings to the Metro Mini by calling three slots as methods
                 
         Called by:
             MainWindow.initializeSerialObjects
@@ -81,7 +79,6 @@ class PixelTool(QObject):
         Returns:
             none
         """
-        self.changeSliderStyle(self.buttons.button(Animation.CYCLE).isChecked())
         self.sendNewColor()
         self.changeMode(self.buttons.checkedId())
     
@@ -126,60 +123,38 @@ class PixelTool(QObject):
             sendToSerial
         """
         self.sendToSerial.emit(f'pixel {self.index} {self.convertToHSV(self.colorObjects[0]["slider"].value(),self.colorObjects[1]["slider"].value(),self.colorObjects[2]["slider"].value())};')
-
-    def changeSliderStyle(self, en):
-        """SLOT: changeSliderStyle
+    
+    def colorChanged(self):
+        """SLOT: colorChanged
                 
-        Change the appearance of the color sliders when the animation changes to or from cycle mode.
+        Calls updateSquare to avoid using it as a slot
                 
         Expects:
-            bool - Whether cycle mode is active
+            none
                 
         Connects to:
-            QRadioButton.toggled (buttons.button(Animation.CYCLE))
+            QSlider.valueChanged
         """
-        color = "d6d6d6" if en else "000000"
-        handle = "#ffffff" if en else "qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #9313a0, stop:1 #2f133c)"
-        for obj in self.colorObjects:
-            obj["slider"].setStyleSheet("QSlider::groove:vertical {\n"
-                                        f"    border: 1px solid #{color};\n"
-                                        "    width: 4px;\n"
-                                        f"    background: #{color};\n"
-                                        "    margin: 5px;\n"
-                                        "}\n"
-                                        "\n"
-                                        "QSlider::handle:vertical {\n"
-                                        f"    background: {handle};\n"
-                                        f"    border: 1px solid #{color};\n"
-                                        "    height: 18px;\n"
-                                        "    margin: 2px -20px;\n"
-                                        "    border-radius: 3px;\n"
-                                        "}")
-            obj["label"].setStyleSheet(f"color: #{color}")
-            obj["value"].setStyleSheet(f"color: #{color}")
-        if en:
-            self.updateSquare("qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(255, 0, 0, 255), stop:0.166 rgba(255, 255, 0, 255), stop:0.333 rgba(0, 255, 0, 255), stop:0.5 rgba(0, 255, 255, 255), stop:0.666 rgba(0, 0, 255, 255), stop:0.833 rgba(255, 0, 255, 255), stop:1 rgba(255, 0, 0, 255))")
-        else:
-            self.updateSquare()
+        self.updateSquare()
     
-    def updateSquare(self, arg = None):
-        """SLOT: updateSquare
+    def updateSquare(self, colorString = None):
+        """METHOD: updateSquare
                 
         Updates the color of the square indicating the current color, using the passed string if provided
         
-        Expects:
+        Arguments:
+            str - An optional string representation of the color to be displayed
+            
+        Returns:
             none
         
-        Connects to:
-            QSlider.valueChanged
-        
-        Arguments:
-            str - An optional representation of the color to be displayed
+        Called by:
+            colorChanged, changeMode
         """
-        if type(arg) is str: # If this function is passed a string argument, it should override the default case
-            color = arg
-        else:
+        if colorString is None:
             color = f'rgb({self.colorObjects[0]["slider"].value()},{self.colorObjects[1]["slider"].value()},{self.colorObjects[2]["slider"].value()})'
+        else:
+            color = colorString
         if color == "rgb(0,0,0)":
             color = "#ffffff"
             self.square.setText("off")
@@ -224,6 +199,15 @@ class PixelTool(QObject):
         arg = ""
         if mode != Animation.STATIC:
             arg = f" {self.dial.value()}"
+        notCycle = mode != Animation.CYCLE
+        for obj in self.colorObjects:
+            obj["slider"].setStyleSheet(self.styles["QSlider-" + str(notCycle)])
+            obj["label"].setStyleSheet(self.styles["QLabel-" + str(notCycle)])
+            obj["value"].setStyleSheet(self.styles["QLabel-" + str(notCycle)])
+        if notCycle:
+            self.updateSquare()
+        else:
+            self.updateSquare("qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(255, 0, 0, 255), stop:0.166 rgba(255, 255, 0, 255), stop:0.333 rgba(0, 255, 0, 255), stop:0.5 rgba(0, 255, 255, 255), stop:0.666 rgba(0, 0, 255, 255), stop:0.833 rgba(255, 0, 255, 255), stop:1 rgba(255, 0, 0, 255))")
         self.sendToSerial.emit(f"pixel {self.index} {self.modes[mode]}{arg};")
     
     def convertToHSV(self, ri, gi, bi):
@@ -255,4 +239,6 @@ class PixelTool(QObject):
             s = float(0)
         else:
             s = float(c / v)
-        return f"{int(h * 65535 / 360)} {int(s * 255)} {int(v * 255)}"          
+        if h < 0:
+            h += 360.0
+        return f"{int(h * 65536 / 360)} {int(s * 255)} {int(v * 255)}"          

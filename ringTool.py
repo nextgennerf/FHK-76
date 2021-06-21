@@ -1,6 +1,6 @@
 import json
 from enum import IntEnum
-from PyQt5.QtCore import QObject, pyqtSignal, Qt
+from PyQt5.QtCore import QObject, pyqtSignal, Qt, QRegularExpression
 from PyQt5.QtWidgets import QDial, QCheckBox, QLabel, QPushButton, QRadioButton, QStackedWidget
 from PyQt5.Qt import QPixmap
 
@@ -104,11 +104,11 @@ class RingTool(QObject):
         self.timeDial = patternWidget.findChild(QDial)
         self.timeDial.sliderReleased.connect(self.sendNewValue)
         
-        self.animationLabels = []
+        self.aLabels = []
         for l in patternWidget.findChildren(QLabel):
             n = l.objectName()
             if n == "ANIMATION" or n == "timeLabel":
-                self.animationLabels.append(l)
+                self.aLabels.append(l)
                 if n == "timeLabel":
                     self.timeLabel = l
                     self.timeDial.valueChanged.connect(lambda val: self.timeLabel.setText(f"{val} sec"))
@@ -196,13 +196,14 @@ class RingTool(QObject):
                 else:
                     self.stepLabel = l
         self.stepDial.valueChanged.connect(lambda val: self.stepLabel.setText(f"{max(float(val / 2.0), 0.5)} sec"))
+        self.sLabels = colorWidget.findChildren(QLabel, QRegularExpression("^step", QRegularExpression.CaseInsensitiveOption))
         
         self.sendToSerial.connect(serial.broadcast)
     
     def initialize(self):
         """METHOD: initialize
                 
-        Sends initial settings to the Metro Mini by calling two slots as methods
+        Sends initial settings to the Metro Mini (calls patternChanged as a method)
                 
         Called by:
             MainWindow.initializeSerialObjects
@@ -213,8 +214,8 @@ class RingTool(QObject):
         Returns:
             none
         """
-        #TODO: change to signal emits
-        self.layoutChanged()
+        self.layout.setPixmap(QPixmap(f"layouts/{self.counts.checkedId()}{'a' if self.alternateLayout.isChecked() else ''}.png").scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio, \
+                                                                                                                                        Qt.TransformationMode.SmoothTransformation))
         self.patternChanged(self.patterns.checkedId())
     
     def patternChanged(self, arg):
@@ -231,18 +232,23 @@ class RingTool(QObject):
             QPushButton.toggled (MainWindow.spinCLW, broadcasts bool)
         """
         if type(arg) is int: # Only calls from radio buttons require GUI changes
-            self.changeStyle(arg != Animation.STATIC, *self.animationLabels)
-            self.changeStyle(arg != Animation.RAINBOW_SPIN, *self.otherColors)
-            if arg == Animation.RAINBOW_SPIN:
-                for b in self.counts.buttons():
-                    self.changeStyle(self.counts.id(b) == 24, b)
+            self.changeStyle(arg != Animation.STATIC, *self.aLabels)
             noMotion = arg == Animation.STATIC or arg == Animation.BREATHE
-            spinPattern = arg == Animation.FADE_SPIN or arg == Animation.SOLID_SPIN
-            self.changeStyle(not spinPattern, self.counts.button(12), self.counts.button(24))
             self.changeStyle(not noMotion, *self.directions.buttons())
-            self.updateCheckBox()
-            if spinPattern and self.counts.checkedId() > 8: # This ensures a valid count button is always checked
+            for cb in self.counts.buttons():
+                num = self.counts.id(cb)
+                if num == 1:
+                    self.changeStyle(arg != Animation.STATIC and arg != Animation.RAINBOW_SPIN, cb)
+                elif num == 12:
+                    self.changeStyle(noMotion, cb)
+                elif num == 24:
+                    self.changeStyle(noMotion or arg == Animation.RAINBOW_SPIN, cb)
+                else:
+                    self.changeStyle(arg != Animation.RAINBOW_SPIN, cb)
+            if (arg == Animation.FADE_SPIN or arg == Animation.SOLID_SPIN) and self.counts.checkedId() > 8: # This ensures a valid count button is always checked
                 self.setEightCount.emit()
+            self.changeStyle(arg != Animation.RAINBOW_SPIN, *self.otherColors, *self.sLabels)
+        self.updateCheckBox()
         self.composeAndSend()
     
     def layoutChanged(self):
@@ -321,10 +327,10 @@ class RingTool(QObject):
             if pattern != Animation.BREATHE:
                 msg += f" {'clw' if self.directions.button(0).isChecked() else 'ccw'}"
             
-        if pattern != Animation.RAINBOW_SPIN:
-            msg += f" {self.colorDict[self.colors.checkedId()]}"
-        
-        self.sendToSerial.emit(msg + f" {self.hueDial.value() * 65536 / 3 if self.colors.checkedId() is Color.SINGLE else float(self.stepDial.value() / 2.0)};")
+        if pattern == Animation.RAINBOW_SPIN:
+            self.sendToSerial.emit(msg + ";")
+        else:
+            self.sendToSerial.emit(msg + f" {self.colorDict[self.colors.checkedId()]} {self.hueDial.value() * 2048 if self.colors.checkedId() == Color.SINGLE else float(self.stepDial.value() / 2.0)};")
                 
     def sendNewValue(self):
         """SLOT: sendNewValue
@@ -343,7 +349,7 @@ class RingTool(QObject):
         source = self.sender()
         newVal = source.value()
         if source is self.hueDial:
-            newVal = newVal * 65536 / 3
+            newVal = newVal * 2048
         elif source is self.stepDial:
             if newVal == 0:
                 source.setValue(1)
@@ -362,7 +368,7 @@ class RingTool(QObject):
             QDial.valueChanged
         """
         self.hueLabel.setStyleSheet("border: 2px solid #000000;\n"
-                                    f"background-color: hsv({hue * 12}, 255, 255)")
+                                    f"background-color: hsv({hue * 11.25}, 255, 255)")
         
     def changeStyle (self, en, *widgets):
         """METHOD: changeStyle

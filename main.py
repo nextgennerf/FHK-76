@@ -77,8 +77,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.uc.ready.connect(self.initializeSerialObjects)
         self.sendToSerial.connect(self.uc.broadcast)
         
-        self.leftTool = PixelTool(self.leftSide, self.leftButtons, self.uc, 0)
-        self.rightTool = PixelTool(self.rightSide, self.rightButtons, self.uc, 1)
+        self.leftTool = PixelTool(self.leftSide, self.uc, 0)
+        self.rightTool = PixelTool(self.rightSide, self.uc, 1)
         self.frontTool = RingTool(self.frontPattern, self.frontColor, self.uc)
         
         self.simulator = None

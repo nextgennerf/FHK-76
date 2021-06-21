@@ -1128,6 +1128,7 @@ class Ui_MainWindow(object):
         self.COUNT.setObjectName("COUNT")
         self.countLayout.addWidget(self.COUNT)
         self.button1 = QtWidgets.QRadioButton(self.widget)
+        self.button1.setEnabled(False)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -1500,7 +1501,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.hueDial.sizePolicy().hasHeightForWidth())
         self.hueDial.setSizePolicy(sizePolicy)
         self.hueDial.setMinimumSize(QtCore.QSize(300, 0))
-        self.hueDial.setMaximum(29)
+        self.hueDial.setMaximum(31)
         self.hueDial.setPageStep(5)
         self.hueDial.setWrapping(True)
         self.hueDial.setNotchesVisible(False)
@@ -1530,10 +1531,10 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         self.toolBox.setCurrentIndex(2)
         self.toolBox.layout().setSpacing(-1)
-        self.colorOptions.setCurrentIndex(0)
+        self.colorOptions.setCurrentIndex(1)
         self.leftRedSlider.valueChanged['int'].connect(self.leftRedValue.setNum)
         self.leftGreenSlider.valueChanged['int'].connect(self.leftGreenValue.setNum)
         self.leftBlueSlider.valueChanged['int'].connect(self.leftBlueValue.setNum)
@@ -1584,6 +1585,7 @@ class Ui_MainWindow(object):
         self.frontSolidSpinButton.clicked['bool'].connect(self.button1.setEnabled)
         self.frontFadeSpinButton.clicked['bool'].connect(self.button1.setEnabled)
         self.frontRainbowButton.clicked['bool'].connect(self.button1.setDisabled)
+        self.frontRainbowButton.toggled['bool'].connect(self.stepDial.setDisabled)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
